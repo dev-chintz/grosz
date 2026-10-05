@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+.git
+.claude
+.data
+.deploy
+backups
+web/dist
+.env
+*.log
+**/*.test.ts

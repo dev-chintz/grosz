@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.data/
+backups/
+.deploy/
+.env
+*.log
+coverage/
+.claude/settings.local.json

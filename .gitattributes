@@ -1,0 +1,2 @@
+# Skrypty uruchamiane na NAS (Linux) muszą mieć końce linii LF.
+* text=auto eol=lf
