@@ -22,7 +22,7 @@ GitHub — prywatne repozytorium ⟨REPO⟩
 QNAP „DOMOWY” (w sieci Tailscale: 100.112.158.37), Container Station
    ├─ katalog ⟨APP_DIR⟩ z kopią repo + .env + .deploy/id_ed25519 (poza gitem)
    ├─ docker compose: usługa `migrate` (jednorazowa) → usługa `app` na porcie 8090
-   └─ PostgreSQL w osobnym kontenerze ⟨PG_CONTAINER⟩, port 5432 wystawiony na NAS; baza `grosz`, użytkownik `grosz`
+   └─ PostgreSQL w osobnym kontenerze anvero-db-db-1, port 5432 wystawiony na NAS; baza `grosz`, użytkownik `grosz`
 ```
 
 Aplikacja: `http://DOMOWY:8090` — działa w sieci domowej i z każdego urządzenia w tej samej sieci Tailscale.
@@ -41,8 +41,8 @@ Gdy trafisz na wartość ⟨…⟩, zapytaj użytkownika i wpisz odpowiedź tuta
 | ⟨REPO⟩ — adres repo | `git@github.com:<konto>/grosz.git` | do uzupełnienia |
 | ⟨APP_DIR⟩ — katalog aplikacji na NAS | `/share/Container/grosz` | do potwierdzenia |
 | PostgreSQL | w kontenerze w Container Station, port 5432 wystawiony na NAS | ustalone 2026-10-06 |
-| ⟨PG_CONTAINER⟩ — nazwa kontenera Postgresa | sprawdzić w Container Station lub `docker ps` | do uzupełnienia |
-| Wersja PostgreSQL | `docker exec ⟨PG_CONTAINER⟩ postgres --version` — od niej zależy obraz do `pg_dump` i do developmentu | do uzupełnienia |
+| anvero-db-db-1 — nazwa kontenera Postgresa | `anvero-db-db-1` (należy do stosu innego projektu użytkownika, Anvero; grosz ma w nim osobną bazę i osobnego użytkownika, nie dotykaj bazy Anvero) | ustalone 2026-10-06 |
+| Wersja PostgreSQL | **17** (obraz `postgres:17`) → `PG_IMAGE=postgres:17-alpine` do kopii zapasowych | ustalone 2026-10-06 |
 | Port aplikacji | **8090** (8080, 8081 i 3000 są na NAS zajęte — sprawdzone 2026-10-06; wolne były też 8088, 8180, 8484, 8765, 9080) | ustalone 2026-10-06 |
 
 ## 3. Migracje bazy (Drizzle)
@@ -80,11 +80,13 @@ DATABASE_URL=postgres://grosz:<hasło>@host.docker.internal:5432/grosz
 PG_IMAGE=postgres:<wersja serwera>-alpine
 ```
 
-Dlaczego `host.docker.internal`: Postgres działa w innym kontenerze i ma port 5432 wystawiony na NAS. `localhost` wewnątrz kontenera `app` wskazuje na sam kontener, nie na NAS; wpis `extra_hosts: host-gateway` w compose daje nazwę, która zawsze prowadzi do NAS. Gdyby to nie działało na danej wersji Container Station, alternatywą jest dołączenie `app` do sieci dockerowej Postgresa (`networks: external`) i użycie nazwy ⟨PG_CONTAINER⟩ jako hosta.
+Dlaczego `host.docker.internal`: Postgres działa w innym kontenerze i ma port 5432 wystawiony na NAS. `localhost` wewnątrz kontenera `app` wskazuje na sam kontener, nie na NAS; wpis `extra_hosts: host-gateway` w compose daje nazwę, która zawsze prowadzi do NAS. Gdyby to nie działało na danej wersji Container Station, alternatywą jest dołączenie `app` do sieci dockerowej Postgresa (`networks: external`) i użycie nazwy anvero-db-db-1 jako hosta.
 
 Baza i użytkownik dla aplikacji (jednorazowo, hasło wygeneruj losowo i wpisz tylko do `.env` na NAS):
 ```sh
-docker exec -it ⟨PG_CONTAINER⟩ psql -U postgres -c "CREATE ROLE grosz LOGIN PASSWORD '<hasło>';" -c "CREATE DATABASE grosz OWNER grosz;"
+# administrator w tym kontenerze nie musi nazywać się „postgres” — sprawdź:
+docker exec anvero-db-db-1 printenv POSTGRES_USER
+docker exec -it anvero-db-db-1 psql -U <POSTGRES_USER> -d postgres -c "CREATE ROLE grosz LOGIN PASSWORD '<hasło>';" -c "CREATE DATABASE grosz OWNER grosz;"
 ```
 Aplikacja łączy się jako `grosz`, nie jako `postgres` — błąd w aplikacji nie może wtedy ruszyć innych baz na tym serwerze.
 

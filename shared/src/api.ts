@@ -1,6 +1,7 @@
 // Kształty odpowiedzi API, wspólne dla serwera i przeglądarki. Kwoty w groszach.
 
 import type { IsoDate } from './dates.ts';
+import type { RuleInput, ScheduleSummary } from './recurring.ts';
 
 export type Direction = 'expense' | 'income';
 export type EventKind = 'recurring' | 'oneoff';
@@ -63,4 +64,35 @@ export interface DashboardResponse {
   upcoming: UpcomingPayment[];
   categories: CategoryTotal[];
   recent: RecentItem[];
+}
+
+export interface RecurringRuleDto extends RuleInput {
+  id: string;
+  status: 'active' | 'paused';
+  pausedFrom: IsoDate | null;
+  categoryName: string | null;
+  /** „co miesiąc, 15.” */
+  frequencyLabel: string;
+  /** Aktualna kwota przeliczona na miesiąc (do sum). */
+  monthlyAmount: number;
+  /** Od najnowszej. */
+  amountHistory: { effectiveFrom: IsoDate; amount: number }[];
+  schedule: ScheduleSummary;
+}
+
+export interface RecurringListResponse {
+  today: IsoDate;
+  rules: RecurringRuleDto[];
+  /** Suma miesięczna aktywnych wydatków. */
+  monthlyExpenses: number;
+}
+
+export interface OptionsResponse {
+  categories: { id: string; name: string; direction: Direction }[];
+  accounts: { id: string; name: string }[];
+}
+
+export interface SaveRuleRequest extends RuleInput {
+  /** Od kiedy zmiana obowiązuje (domyślnie dziś). Opłaconych terminów nie zmieniamy. */
+  applyFrom?: IsoDate;
 }

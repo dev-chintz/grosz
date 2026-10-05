@@ -1,0 +1,407 @@
+.editor {
+  flex: 1 1 440px;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.title {
+  font-size: 26px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.iconButton {
+  width: var(--control-h);
+  height: var(--control-h);
+  flex: none;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-input);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover,
+.ghostButton:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.danger {
+  color: var(--expense-text);
+}
+
+/* ---------- sekcje ---------- */
+.section {
+  margin: 0;
+  padding: 20px 0 0;
+  border: 0;
+  border-top: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* legend w fieldsecie nie układa się flexem — float wyrzuca ją do zwykłego przepływu. */
+.legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.legend + * {
+  clear: both;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3b3f45;
+}
+
+.groupHint {
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.narrow {
+  width: 76px;
+  font-family: var(--font-mono);
+}
+
+.auto {
+  width: auto;
+}
+
+.amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amount input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.amount:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.amount span {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.error {
+  font-size: 13px;
+  color: var(--expense-text);
+  font-weight: 500;
+}
+
+/* ---------- wybór dnia ---------- */
+.dayGrid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dayButton {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #e4e0d8;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.weekdays .dayButton {
+  height: var(--control-h);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dayButton:hover {
+  background: var(--surface-2);
+}
+
+.dayButton[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--ink);
+  font-weight: 700;
+}
+
+.weekdays .dayButton[aria-pressed='true'] {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+/* ---------- podsumowanie rat ---------- */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3b3f45;
+}
+
+.summaryTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track-strong);
+  overflow: hidden;
+}
+
+.summaryTrack span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+
+/* ---------- historia i podgląd ---------- */
+.history,
+.preview {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.historyOld {
+  color: var(--text-2);
+}
+
+.historyOld strong {
+  font-weight: 400;
+}
+
+.preview li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 14px;
+}
+
+.previewNo {
+  width: 36px;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.previewDate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.previewDate strong {
+  font-weight: 600;
+}
+
+.previewDate small {
+  font-size: 12px;
+  color: var(--expense-text);
+}
+
+.preview .mono {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- stopka ---------- */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--divider);
+}
+
+.applyFrom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.applyFrom > * {
+  flex: 1 1 200px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.status {
+  margin-right: auto;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.ghostButton,
+.saveButton,
+.deleteButton {
+  height: var(--control-h);
+  padding: 0 18px;
+  border-radius: var(--radius-control);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ghostButton {
+  border: 1px solid var(--border-input);
+  background: var(--surface);
+  font-weight: 500;
+}
+
+.saveButton {
+  border: 0;
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.deleteButton {
+  border: 0;
+  background: var(--expense-text);
+  color: #ffffff;
+}
+
+.ghostButton:disabled,
+.saveButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- okno potwierdzenia ---------- */
+.dialog {
+  max-width: 440px;
+  border: 0;
+  border-radius: var(--radius-card);
+  padding: 28px;
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background: rgba(22, 24, 27, 0.5);
+}
+
+.dialog h3 {
+  font-size: 22px;
+}
+
+.dialog p {
+  margin: 12px 0 20px;
+  line-height: 1.5;
+  color: #3b3f45;
+}
+
+.dialogButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .editor {
+    padding: 22px 18px;
+  }
+}

@@ -57,6 +57,9 @@ const PATHS = {
       <path d="M9 11v5M15 11v5" />
     </>
   ),
+  pause: <path d="M9 5v14M15 5v14" />,
+  play: <path d="M7 5l12 7-12 7z" />,
+  trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
   coin: (
     <>
       <circle cx="12" cy="12" r="7.5" />

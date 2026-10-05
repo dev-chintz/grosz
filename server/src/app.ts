@@ -7,7 +7,9 @@ import { today } from '@grosz/shared/dates';
 import type { Connection } from './db/client.ts';
 import { buildDashboard } from './domain/dashboard.ts';
 import { currentHouseholdId } from './domain/household.ts';
+import { ValidationError } from './domain/recurring.ts';
 import { setOccurrencePaid } from './domain/rules.ts';
+import { registerRecurringRoutes } from './routes/recurring.ts';
 
 const WEB_DIST = fileURLToPath(new URL('../../web/dist', import.meta.url));
 
@@ -57,6 +59,17 @@ export function buildApp(connection: Connection) {
       return ok ? { ok } : reply.code(404).send({ error: 'Nie znaleziono płatności.' });
     },
   );
+
+  registerRecurringRoutes(app, db, requireHousehold);
+
+  app.setErrorHandler((error: Error & { statusCode?: number; errors?: unknown; validation?: unknown }, _request, reply) => {
+    const status = error.statusCode ?? 500;
+    if (status >= 500) app.log.error(error);
+    return reply.code(status).send({
+      error: status >= 500 ? 'Wewnętrzny błąd serwera.' : error.validation ? 'Nieprawidłowe dane w zapytaniu.' : error.message,
+      ...(error instanceof ValidationError ? { errors: error.errors } : {}),
+    });
+  });
 
   // Zbudowany frontend (produkcja). W developmencie serwuje go Vite.
   if (existsSync(WEB_DIST)) {
