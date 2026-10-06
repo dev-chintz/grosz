@@ -131,8 +131,47 @@
     flex: none;
   }
 
+  /* Na telefonie zostaje tylko wiersz z „Wyloguj”. */
   .dot,
-  .household {
+  .householdRow {
     display: none;
   }
+
+  .household {
+    padding: 4px 16px;
+  }
+
+  .userRow {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+.userRow {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2e3137;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--on-ink-2);
+}
+
+.logout {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #3a3e45;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--on-ink-nav);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.logout:hover {
+  background: #2e3137;
+  color: #ffffff;
 }

@@ -34,9 +34,28 @@ export const users = pgTable(
     householdId: householdId(),
     name: text('name').notNull(),
     email: text('email').unique(),
+    /** Login do aplikacji (małe litery); null = osoba bez konta, tylko domownik w budżecie. */
+    login: text('login').unique(),
+    /** scrypt$N$r$p$sól$skrót (base64) — zob. server/src/auth/password.ts. */
+    passwordHash: text('password_hash'),
     createdAt: createdAt(),
   },
   (t) => [index('users_household_idx').on(t.householdId)],
+);
+
+/** Sesje logowania. W bazie tylko skrót tokenu — wyciek bazy nie daje gotowych ciasteczek. */
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('sessions_user_idx').on(t.userId)],
 );
 
 export const accounts = pgTable(

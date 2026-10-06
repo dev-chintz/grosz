@@ -7,6 +7,7 @@ import './styles/global.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
+import { AuthGate } from './components/AuthGate.tsx';
 import { Layout } from './components/Layout.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { Calendar } from './pages/Calendar.tsx';
@@ -19,6 +20,7 @@ import { Transactions } from './pages/Transactions.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <AuthGate>
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
@@ -34,5 +36,6 @@ createRoot(document.getElementById('root')!).render(
         </Route>
       </Routes>
     </BrowserRouter>
+    </AuthGate>
   </StrictMode>,
 );

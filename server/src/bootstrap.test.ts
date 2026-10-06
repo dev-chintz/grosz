@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import type { CategoriesResponse, SettingsResponse } from '@grosz/shared/api';
 import { buildApp } from './app.ts';
+import { signIn } from './test-auth.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
 import { bootstrapBudget, DEFAULT_CATEGORIES } from './domain/bootstrap.ts';
 
@@ -26,13 +27,15 @@ afterAll(async () => {
 const json = <T>(res: { body: string }) => JSON.parse(res.body) as T;
 
 describe('bootstrap pustego budżetu', () => {
-  it('przed bootstrapem pusta baza zwraca 409 na każdym ekranie', async () => {
-    expect((await app.inject({ url: '/api/settings' })).statusCode).toBe(409);
-    expect((await app.inject({ url: '/api/dashboard' })).statusCode).toBe(409);
+  it('przed bootstrapem nie ma konta: API wymaga logowania, a status prosi o pierwsze uruchomienie', async () => {
+    expect((await app.inject({ url: '/api/settings' })).statusCode).toBe(401);
+    expect((await app.inject({ url: '/api/dashboard' })).statusCode).toBe(401);
+    expect(json<{ setupRequired: boolean }>(await app.inject({ url: '/api/auth/status' })).setupRequired).toBe(true);
   });
 
   it('zakłada gospodarstwo, osobę, konto z saldem 0 i domyślne kategorie', async () => {
     expect(await bootstrapBudget(connection.db, '2026-10-06')).toBe(true);
+    await signIn(app, connection);
 
     const settings = json<SettingsResponse>(await app.inject({ url: '/api/settings' }));
     expect(settings.household).toMatchObject({ name: 'Budżet domowy', currency: 'PLN' });

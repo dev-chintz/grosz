@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import type { CategoriesResponse, DashboardResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse, TransactionsResponse } from '@grosz/shared/api';
 import { addDays, today as todayIso } from '@grosz/shared/dates';
 import { buildApp } from './app.ts';
+import { signIn } from './test-auth.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
 import { accounts, categories, households, transactions, users } from './db/schema.ts';
 
@@ -19,6 +20,7 @@ beforeAll(async () => {
   await connection.db.insert(accounts).values({ householdId: household!.id, name: 'Konto', openingDate: '2026-01-01' });
   app = buildApp(connection);
   await app.ready();
+  await signIn(app, connection);
   // Pierwsze uruchomienie PGlite (WASM) i migracje potrafią zająć kilkanaście sekund.
 }, 60_000);
 

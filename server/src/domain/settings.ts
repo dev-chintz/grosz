@@ -142,6 +142,9 @@ export async function updateMember(db: Db, householdId: string, id: string, inpu
  */
 export async function deleteMember(db: Db, householdId: string, id: string): Promise<void> {
   await findMember(db, householdId, id);
+  // Osoba z kontem logowania: usunięcie skasowałoby konto i jego sesje — można by odciąć sobie dostęp.
+  const [withAccount] = await db.select({ login: users.login }).from(users).where(eq(users.id, id));
+  if (withAccount?.login) throw new SettingsError(400, 'Ta osoba ma konto logowania — nie można jej usunąć.');
   const all = await db.select({ id: users.id }).from(users).where(eq(users.householdId, householdId));
   if (all.length <= 1) throw new SettingsError(400, 'Musi zostać co najmniej jedna osoba.');
   await db.delete(users).where(and(eq(users.id, id), eq(users.householdId, householdId)));

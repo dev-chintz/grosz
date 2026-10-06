@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { registerAuth } from './routes/auth.ts';
 import { fileURLToPath } from 'node:url';
 import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
@@ -8,12 +9,8 @@ import type { Connection } from './db/client.ts';
 import { buildCalendar } from './domain/calendar.ts';
 import { buildDashboard } from './domain/dashboard.ts';
 import { currentHouseholdId } from './domain/household.ts';
-import { CategoryValidationError } from './domain/categories.ts';
-import { ValidationError } from './domain/recurring.ts';
-import { TransactionValidationError } from './domain/transactions.ts';
 import { setOccurrencePaid } from './domain/rules.ts';
 import { registerCategoryRoutes } from './routes/categories.ts';
-import { SettingsValidationError } from './domain/settings.ts';
 import { registerExportRoutes } from './routes/export.ts';
 import { registerReportRoutes } from './routes/reports.ts';
 import { registerSettingsRoutes } from './routes/settings.ts';
@@ -30,6 +27,8 @@ export function buildApp(connection: Connection) {
     // wtedy „bez limitu” albo „bez przypomnienia” zapisałoby się jako 0. Dane przyjmujemy dokładnie takie, jakie przyszły.
     ajv: { customOptions: { coerceTypes: false } },
   });
+  // Logowanie najpierw: hak onRequest musi obejmować wszystkie trasy /api/*.
+  registerAuth(app, db);
 
   const requireHousehold = async () => {
     const id = await currentHouseholdId(db);
@@ -95,12 +94,8 @@ export function buildApp(connection: Connection) {
     if (status >= 500) app.log.error(error);
     return reply.code(status).send({
       error: status >= 500 ? 'Wewnętrzny błąd serwera.' : error.validation ? 'Nieprawidłowe dane w zapytaniu.' : error.message,
-      ...(error instanceof ValidationError ||
-      error instanceof TransactionValidationError ||
-      error instanceof CategoryValidationError ||
-      error instanceof SettingsValidationError
-        ? { errors: error.errors }
-        : {}),
+      // Błędy walidacji domeny (i logowania) niosą komunikaty per pole.
+      ...(status < 500 && error.errors ? { errors: error.errors } : {}),
     });
   });
 

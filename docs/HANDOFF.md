@@ -12,7 +12,9 @@ Stan z 2026-10-06. Historia czatu i lokalna pamięć Claude'a **nie przenoszą s
 
 **Wdrożone na NAS 2026-10-07:** http://192.168.1.9:8090 (w domu), http://100.112.158.37:8090 (Tailscale). Baza przez sieć Dockera `anvero-db_default`, dobowa kopia o 3:00 z crontaba QNAP (`/etc/config/crontab`, log w `backups/cron.log`; QTS nie ma harmonogramu w Panelu sterowania). Kolejne wydania: `sh deploy/deploy.sh` na NAS.
 
-**Nie jest zrobione:** import z kopii, logowanie.
+**Logowanie (od migracji 0005):** cała aplikacja wymaga konta. Przy pustej bazie kont ekran „Pierwsze uruchomienie” prosi o kod z logów: `docker compose logs app | grep Kod` (nowy kod przy każdym starcie, działa do założenia konta). Hasła scrypt, sesja 30 dni w ciasteczku httpOnly, blokada na 15 min po 5 złych próbach. Osoby z kontem nie da się usunąć w Ustawieniach.
+
+**Nie jest zrobione:** import z kopii, zakładanie kont dla kolejnych domowników, aktualizacja z przycisku (plan: kontener updater jak w Anvero).
 
 ## 1. Uruchomienie lokalne (PowerShell, Node 24+)
 

@@ -36,6 +36,13 @@
       "when": 1791286533068,
       "tag": "0004_occurrence_auto_booked_at",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791302817453,
+      "tag": "0005_auth_sessions",
+      "breakpoints": true
     }
   ]
 }

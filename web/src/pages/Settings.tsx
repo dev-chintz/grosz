@@ -5,6 +5,7 @@ import { formatPLN, formatShortDate, parsePLN, plural } from '@grosz/shared/form
 import { validateAccountInput, validateHouseholdInput, validateMemberInput, type AccountInputErrors } from '@grosz/shared/settings';
 import { api, ApiError, HOUSEHOLD_CHANGED, type HouseholdChange } from '../api.ts';
 import { Field, inputClass } from '../components/controls.tsx';
+import { PasswordCard } from '../components/AuthGate.tsx';
 import { Icon } from '../components/Icon.tsx';
 import styles from './Settings.module.css';
 
@@ -49,6 +50,7 @@ export function Settings() {
           <MembersCard members={data.members} onChanged={reload} onError={setError} />
           <AccountsCard accounts={data.accounts} onChanged={reload} onError={setError} />
           <DataCard />
+          <PasswordCard className={styles.card} />
         </div>
       )}
     </>

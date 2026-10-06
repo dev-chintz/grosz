@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
 import { plural } from '@grosz/shared/format';
 import { api, HOUSEHOLD_CHANGED, type HouseholdChange } from '../api.ts';
+import { useAuth } from './AuthGate.tsx';
 import { Icon, type IconName } from './Icon.tsx';
 import styles from './Sidebar.module.css';
 
@@ -24,6 +25,7 @@ const initials = (name: string) =>
     .join('');
 
 export function Sidebar() {
+  const { user, logout } = useAuth();
   const [household, setHousehold] = useState<{ name: string; currency: string; memberCount: number } | null>(null);
 
   useEffect(() => {
@@ -69,6 +71,12 @@ export function Sidebar() {
               {household ? `${household.memberCount} ${plural(household.memberCount, ['osoba', 'osoby', 'osób'])}` : ''} · {household?.currency ?? 'PLN'}
             </span>
           </span>
+        </div>
+        <div className={styles.userRow}>
+          <span>{user.name}</span>
+          <button type="button" className={styles.logout} onClick={() => void logout()}>
+            Wyloguj
+          </button>
         </div>
       </div>
     </aside>

@@ -2,6 +2,8 @@ import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccount
 
 /** Zdarzenie okna: zmieniono nazwę gospodarstwa (detail = nowa nazwa). Odświeża kartę w sidebarze. */
 export const HOUSEHOLD_CHANGED = 'grosz:household-changed';
+/** Sesja wygasła lub ktoś się wylogował w innej karcie — AuthGate pokazuje ekran logowania. */
+export const UNAUTHORIZED = 'grosz:unauthorized';
 
 /** Szczegóły zdarzenia HOUSEHOLD_CHANGED: tylko pola, które się zmieniły. */
 export interface HouseholdChange {
@@ -25,13 +27,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: init?.body ? { 'content-type': 'application/json', ...init.headers } : init?.headers,
   });
   const body = await response.json().catch(() => null);
+  if (response.status === 401 && !path.startsWith('/api/auth/')) window.dispatchEvent(new Event(UNAUTHORIZED));
   if (!response.ok) throw new ApiError(body?.error ?? `Błąd serwera (${response.status})`, response.status, body?.errors);
   return body as T;
 }
 
 const post = <T>(path: string, data?: unknown) => request<T>(path, { method: 'POST', body: JSON.stringify(data ?? {}) });
 
+export interface AuthStatus {
+  authenticated: boolean;
+  user: { id: string; name: string; login: string } | null;
+  setupRequired: boolean;
+}
+
 export const api = {
+  authStatus: () => request<AuthStatus>('/api/auth/status'),
+  login: (login: string, password: string) => post<{ ok: boolean }>('/api/auth/login', { login, password }),
+  setup: (data: { code: string; name: string; login: string; password: string }) => post<{ ok: boolean }>('/api/auth/setup', data),
+  logout: () => post<{ ok: boolean }>('/api/auth/logout'),
+  changePassword: (current: string, next: string) => post<{ ok: boolean }>('/api/auth/password', { current, next }),
+
   dashboard: (month: string) => request<DashboardResponse>(`/api/dashboard?month=${month}`),
   calendar: (month: string) => request<CalendarResponse>(`/api/calendar?month=${month}`),
   /** amount: rzeczywista kwota w groszach (rachunki o zmiennej kwocie); brak = jak zaplanowano. */
