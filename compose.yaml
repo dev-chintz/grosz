@@ -6,7 +6,10 @@
 
 services:
   migrate:
-    build: .
+    # Ten sam obraz co app (zbudowany w deploy.sh). Własny build: by tu nie zadziałał — docker compose build
+    # pomija usługi z profilu tools, więc migracje szłyby ze starego obrazu bez nowych plików migracji.
+    image: grosz:latest
+    pull_policy: never
     command: ["node", "server/src/migrate.ts"]
     env_file: .env
     networks: [db]
@@ -15,6 +18,7 @@ services:
 
   app:
     build: .
+    image: grosz:latest
     env_file: .env
     ports: ["8090:3000"]
     # default: port 8090 wystawiony na NAS; db: dostęp do Postgresa.

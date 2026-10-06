@@ -44,9 +44,13 @@ export function registerAuth(app: FastifyInstance, db: Db) {
   app.decorateRequest('user', null);
 
   // Kod sprawdzamy w tle — buildApp jest synchroniczne, a zapytanie trwa milisekundy.
-  void setupRequired(db).then((required) => {
-    if (required) app.log.warn(`Brak konta. Kod pierwszego uruchomienia: ${issueSetupCode()} (wpisz go na ekranie „Pierwsze uruchomienie”).`);
-  });
+  void setupRequired(db).then(
+    (required) => {
+      if (required) app.log.warn(`Brak konta. Kod pierwszego uruchomienia: ${issueSetupCode()} (wpisz go na ekranie „Pierwsze uruchomienie”).`);
+    },
+    // Np. brak migracji — logujemy zamiast wywracać cały serwer nieobsłużonym błędem.
+    (error: Error) => app.log.error({ err: error }, 'Nie udało się sprawdzić kont — czy migracje są zastosowane?'),
+  );
 
   app.addHook('onRequest', async (request, reply) => {
     const path = request.url.split('?')[0]!;
