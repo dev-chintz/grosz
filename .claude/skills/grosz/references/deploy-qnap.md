@@ -124,7 +124,7 @@ Przywrócenie: zatrzymaj `app`, `gunzip -c <plik> | psql "$DATABASE_URL"` na pus
 
 - Baza do developmentu: **PGlite** (bez `DATABASE_URL`), dane w `.data/pglite`. Nie potrzeba Dockera Desktop, którego obrazy zajmowałyby miejsce na C:. Nigdy nie podłączaj lokalnego developmentu do bazy na NAS — testowe dane i eksperymenty z migracjami trafiłyby do prawdziwego budżetu; `seed.ts` odmawia pracy na prawdziwym PostgreSQL bez `ALLOW_SEED=1`.
 - `npm run dev` w katalogu głównym uruchamia Vite (5173) i Fastify (3000) z proxy `/api`.
-- Testy przeglądarkowe: skill `webapp-testing`. Przeglądarki Playwright zajmują kilkaset MB — przy małej ilości miejsca na C: zainstaluj je z `PLAYWRIGHT_BROWSERS_PATH` wskazującym na dysk z wolnym miejscem.
+- Testy przeglądarkowe: skill `webapp-testing`. Przeglądarki Playwright zajmują kilkaset MB; na C: jest ok. 340 GB wolnego (2026-10-06), więc domyślna instalacja wystarczy.
 
 ## 8. Typowe problemy
 

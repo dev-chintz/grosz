@@ -29,9 +29,9 @@ Monorepo na npm workspaces (`npm install` w katalogu głównym):
 - **Baza lokalnie:** bez `DATABASE_URL` serwer używa **PGlite** (Postgres w procesie, dane w `.data/pglite`, poza gitem). Nie potrzeba Dockera, a migracje są te same co na NAS. Reset danych: usuń `.data/` i uruchom `npm run db:migrate && npm run db:seed`.
 - **API (Fastify):** dopasowywanie typów (`coerceTypes`) jest wyłączone, bo zamieniało `null` na `0` („bez limitu” zapisywało się jako limit 0). Liczby wysyłaj jako liczby, a pola „brak wartości” jako `null`. Testy API są w `server/src/app.test.ts` (PGlite w pamięci, `app.inject`) — nowa trasa z polem nullable dostaje tam test.
 - **Polecenia:** `npm run dev` (API :3000 + Vite :5173), `npm test` (Vitest), `npm run typecheck`, `npm run db:generate | db:migrate | db:seed`. Kompilator to TypeScript 7 — w skryptach `tsc` działa, ale przez npx wywołuj `npx --no -- tsc …` (inaczej `-p` zostanie zjedzone przez npx).
-- **Testy w przeglądarce:** skill `webapp-testing` (Playwright jeszcze niezainstalowany — przy małej ilości miejsca na C: ustaw `PLAYWRIGHT_BROWSERS_PATH`).
+- **Testy w przeglądarce:** skill `webapp-testing` (Playwright jeszcze niezainstalowany; miejsca na C: jest dość, więc domyślna instalacja wystarczy).
 
-Na dysku C: jest mało miejsca (ok. 1 GB). Przed instalowaniem większych paczek sprawdź wolne miejsce; cache npm można bezpiecznie wyczyścić (`npm cache clean --force`).
+Na dysku C: jest dużo miejsca (sprawdzone 2026-10-06: ok. 340 GB wolne), więc instalacja paczek i Playwrighta nie wymaga oszczędzania. Gdyby miejsca zaczęło brakować, cache npm można bezpiecznie wyczyścić (`npm cache clean --force`).
 
 ## Reguły domeny
 
