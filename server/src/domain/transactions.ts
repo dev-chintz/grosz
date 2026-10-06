@@ -28,6 +28,53 @@ class TransactionNotFoundError extends Error {
 /** Znaki specjalne LIKE traktujemy dosłownie — „50%” ma szukać „50%”, a nie wszystkiego. */
 const likePattern = (query: string) => `%${query.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
 
+type OccurrenceRow = { occurrence: typeof occurrences.$inferSelect; rule: typeof recurringRules.$inferSelect; categoryName: string | null; accountName: string | null };
+type TransactionRow = { tx: typeof transactions.$inferSelect; categoryName: string | null; accountName: string | null };
+
+/** Łączy terminy cykliczne i operacje jednorazowe w jedną listę (od najnowszych) ze statusami względem `today`. */
+export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRows: TransactionRow[], today: IsoDate): LedgerItem[] {
+  return [
+    ...transactionRows.map(({ tx, categoryName, accountName }): LedgerItem => ({
+      kind: 'oneoff',
+      id: tx.id,
+      ruleId: null,
+      date: tx.date,
+      name: tx.description,
+      direction: tx.direction,
+      amount: tx.amount,
+      plannedAmount: null,
+      variableAmount: false,
+      categoryId: tx.categoryId,
+      categoryName,
+      accountId: tx.accountId,
+      accountName,
+      note: tx.note,
+      status: tx.date <= today ? 'done' : 'planned',
+    })),
+    ...occurrenceRows.map(({ occurrence, rule, categoryName, accountName }): LedgerItem => {
+      const status: LedgerStatus = occurrence.status === 'paid' ? 'done' : occurrence.dueDate < today ? 'overdue' : 'planned';
+      const actual = occurrence.actualAmount;
+      return {
+        kind: 'recurring',
+        id: occurrence.id,
+        ruleId: rule.id,
+        date: occurrence.dueDate,
+        name: rule.name,
+        direction: rule.direction,
+        amount: actual ?? occurrence.plannedAmount,
+        plannedAmount: actual !== null && actual !== occurrence.plannedAmount ? occurrence.plannedAmount : null,
+        variableAmount: rule.variableAmount,
+        categoryId: rule.categoryId,
+        categoryName,
+        accountId: rule.accountId,
+        accountName,
+        note: null,
+        status,
+      };
+    }),
+  ].sort((a, b) => (a.date === b.date ? (a.direction === b.direction ? 0 : a.direction === 'income' ? -1 : 1) : a.date < b.date ? 1 : -1));
+}
+
 export async function listLedger(
   db: Db,
   householdId: string,
@@ -77,46 +124,7 @@ export async function listLedger(
       .limit(limit),
   ]);
 
-  const items: LedgerItem[] = [
-    ...transactionRows.map(({ tx, categoryName, accountName }): LedgerItem => ({
-      kind: 'oneoff',
-      id: tx.id,
-      ruleId: null,
-      date: tx.date,
-      name: tx.description,
-      direction: tx.direction,
-      amount: tx.amount,
-      plannedAmount: null,
-      variableAmount: false,
-      categoryId: tx.categoryId,
-      categoryName,
-      accountId: tx.accountId,
-      accountName,
-      note: tx.note,
-      status: tx.date <= today ? 'done' : 'planned',
-    })),
-    ...occurrenceRows.map(({ occurrence, rule, categoryName, accountName }): LedgerItem => {
-      const status: LedgerStatus = occurrence.status === 'paid' ? 'done' : occurrence.dueDate < today ? 'overdue' : 'planned';
-      const actual = occurrence.actualAmount;
-      return {
-        kind: 'recurring',
-        id: occurrence.id,
-        ruleId: rule.id,
-        date: occurrence.dueDate,
-        name: rule.name,
-        direction: rule.direction,
-        amount: actual ?? occurrence.plannedAmount,
-        plannedAmount: actual !== null && actual !== occurrence.plannedAmount ? occurrence.plannedAmount : null,
-        variableAmount: rule.variableAmount,
-        categoryId: rule.categoryId,
-        categoryName,
-        accountId: rule.accountId,
-        accountName,
-        note: null,
-        status,
-      };
-    }),
-  ].sort((a, b) => (a.date === b.date ? (a.direction === b.direction ? 0 : a.direction === 'income' ? -1 : 1) : a.date < b.date ? 1 : -1));
+  const items = buildLedgerItems(occurrenceRows, transactionRows, today);
 
   const limited = query !== null && items.length > SEARCH_LIMIT;
   const shown = limited ? items.slice(0, SEARCH_LIMIT) : items;

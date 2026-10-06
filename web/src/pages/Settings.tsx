@@ -45,6 +45,7 @@ export function Settings() {
         <div className={styles.columns}>
           <HouseholdCard household={data.household} onSaved={reload} />
           <AccountsCard accounts={data.accounts} onChanged={reload} onError={setError} />
+          <DataCard />
         </div>
       )}
     </>
@@ -260,5 +261,60 @@ function AccountForm({ initial, existingNames, onCancel, onSaved }: { initial: A
         </button>
       </div>
     </form>
+  );
+}
+
+function DataCard() {
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const invalidRange = from !== '' && to !== '' && from > to;
+  const query = new URLSearchParams([...(from ? [['from', from]] : []), ...(to ? [['to', to]] : [])]).toString();
+
+  return (
+    <section aria-labelledby="data-title" className={styles.card}>
+      <h2 id="data-title" className={styles.cardTitle}>
+        Dane
+      </h2>
+
+      <div className={styles.exportBlock}>
+        <h3>Pełna kopia</h3>
+        <p className={styles.muted}>Konta, kategorie, płatności cykliczne z historią kwot, terminy i operacje w jednym pliku JSON.</p>
+        <a className={styles.downloadButton} href="/api/export/backup" download>
+          <Icon name="download" size={16} strokeWidth={2} />
+          Pobierz kopię (JSON)
+        </a>
+      </div>
+
+      <div className={styles.exportBlock}>
+        <h3>Operacje do Excela</h3>
+        <p className={styles.muted}>Plik CSV ze średnikami i polskimi znakami. Zaplanowane terminy są tylko te, które aplikacja już wygenerowała (kilka miesięcy do przodu).</p>
+        <div className={styles.dateRow}>
+          <Field label="Od" hint="puste = od początku">
+            <input className={inputClass} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </Field>
+          <Field label="Do" hint="puste = do końca">
+            <input className={inputClass} type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </Field>
+        </div>
+        {invalidRange && (
+          <p role="alert" className={styles.error}>
+            Data „od” nie może być późniejsza niż „do”.
+          </p>
+        )}
+        {invalidRange ? (
+          <button type="button" className={styles.downloadButton} disabled>
+            <Icon name="download" size={16} strokeWidth={2} />
+            Pobierz operacje (CSV)
+          </button>
+        ) : (
+          <a className={styles.downloadButton} href={`/api/export/transactions${query ? `?${query}` : ''}`} download>
+            <Icon name="download" size={16} strokeWidth={2} />
+            Pobierz operacje (CSV)
+          </a>
+        )}
+      </div>
+
+      <p className={styles.muted}>Pliki zawierają wszystkie dane finansowe gospodarstwa — przechowuj je w bezpiecznym miejscu.</p>
+    </section>
   );
 }

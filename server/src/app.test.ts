@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import type { CategoriesResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse } from '@grosz/shared/api';
 import { buildApp } from './app.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
-import { accounts, households } from './db/schema.ts';
+import { accounts, households, transactions } from './db/schema.ts';
 
 let connection: Connection;
 let app: ReturnType<typeof buildApp>;
@@ -204,5 +204,56 @@ describe('ustawienia', () => {
   it('nieistniejące konto to 404', async () => {
     const res = await app.inject({ method: 'POST', url: '/api/accounts/00000000-0000-4000-8000-000000000000/archive' });
     expect(res.statusCode).toBe(404);
+  });
+});
+
+describe('eksport danych', () => {
+  const addTransaction = (payload: object) => app.inject({ method: 'POST', url: '/api/transactions', payload });
+
+  it('kopia JSON: wersja, dane gospodarstwa, bez household_id i bez danych innego gospodarstwa', async () => {
+    await addTransaction({ direction: 'expense', amount: 4_200, date: '2032-01-10', description: 'Do kopii zapasowej' });
+    const [other] = await connection.db.insert(households).values({ name: 'Obce gospodarstwo' }).returning();
+    await connection.db.insert(transactions).values({ householdId: other!.id, direction: 'expense', amount: 100, date: '2032-01-11', description: 'Cudza operacja' });
+
+    const res = await app.inject({ url: '/api/export/backup' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('application/json');
+    expect(res.headers['content-disposition']).toMatch(/^attachment; filename="grosz-kopia-\d{4}-\d{2}-\d{2}\.json"$/);
+    const backup = JSON.parse(res.body) as { app: string; version: number; exportedAt: string; household: { name: string }; transactions: { description: string }[]; accounts: unknown[] };
+    expect(backup).toMatchObject({ app: 'grosz', version: 1 });
+    expect(Number.isNaN(Date.parse(backup.exportedAt))).toBe(false);
+    expect(backup.household.name).toBe('Dom');
+    expect(backup.accounts.length).toBeGreaterThan(0);
+    expect(backup.transactions.map((t) => t.description)).toContain('Do kopii zapasowej');
+    expect(res.body).not.toContain('Cudza operacja');
+    expect(res.body).not.toContain('householdId');
+  });
+
+  it('CSV: tylko zakres dat, BOM, nagłówki do pobrania, formuła zabezpieczona, cudze dane nie wyciekają', async () => {
+    await addTransaction({ direction: 'expense', amount: 1_250, date: '2031-05-10', description: 'Eksport w zakresie' });
+    await addTransaction({ direction: 'income', amount: 50_000, date: '2031-06-10', description: '=HYPERLINK("http://zlosliwy";"x")' });
+    await addTransaction({ direction: 'expense', amount: 999, date: '2031-07-01', description: 'Eksport poza zakresem' });
+
+    const res = await app.inject({ url: '/api/export/transactions?from=2031-05-01&to=2031-06-30' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('text/csv');
+    expect(res.headers['content-disposition']).toBe('attachment; filename="grosz-operacje-2031-05-01_2031-06-30.csv"');
+    expect(res.body.startsWith('\uFEFFData;Rodzaj;Nazwa;')).toBe(true);
+    expect(res.body).toContain('2031-05-10;jednorazowa;Eksport w zakresie;;');
+    expect(res.body).toContain(';wydatek;-12,50;');
+    expect(res.body).toContain("'=HYPERLINK");
+    expect(res.body).not.toMatch(/;=HYPERLINK/);
+    expect(res.body).not.toContain('poza zakresem');
+
+    const all = await app.inject({ url: '/api/export/transactions' });
+    expect(all.body).toContain('Eksport poza zakresem');
+    expect(all.body).not.toContain('Cudza operacja');
+    expect(all.headers['content-disposition']).toContain('grosz-operacje-poczatek_koniec.csv');
+  });
+
+  it('niepoprawny zakres dat to 400', async () => {
+    expect((await app.inject({ url: '/api/export/transactions?from=2031-06-30&to=2031-05-01' })).statusCode).toBe(400);
+    expect((await app.inject({ url: '/api/export/transactions?from=2026-02-30' })).statusCode).toBe(400);
+    expect((await app.inject({ url: '/api/export/transactions?from=wczoraj' })).statusCode).toBe(400);
   });
 });

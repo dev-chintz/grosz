@@ -14,6 +14,7 @@ import { TransactionValidationError } from './domain/transactions.ts';
 import { setOccurrencePaid } from './domain/rules.ts';
 import { registerCategoryRoutes } from './routes/categories.ts';
 import { SettingsValidationError } from './domain/settings.ts';
+import { registerExportRoutes } from './routes/export.ts';
 import { registerReportRoutes } from './routes/reports.ts';
 import { registerSettingsRoutes } from './routes/settings.ts';
 import { registerRecurringRoutes } from './routes/recurring.ts';
@@ -87,6 +88,7 @@ export function buildApp(connection: Connection) {
   registerCategoryRoutes(app, db, requireHousehold);
   registerReportRoutes(app, db, requireHousehold);
   registerSettingsRoutes(app, db, requireHousehold);
+  registerExportRoutes(app, db, requireHousehold);
 
   app.setErrorHandler((error: Error & { statusCode?: number; errors?: unknown; validation?: unknown }, _request, reply) => {
     const status = error.statusCode ?? 500;
