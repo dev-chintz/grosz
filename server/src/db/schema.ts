@@ -57,6 +57,8 @@ export const categories = pgTable(
     name: text('name').notNull(),
     direction: direction('direction').notNull().default('expense'),
     sortOrder: smallint('sort_order').notNull().default(0),
+    /** Miesięczny limit wydatków w groszach; null = bez limitu. Tylko dla kategorii wydatków. */
+    monthlyLimit: integer('monthly_limit'),
     createdAt: createdAt(),
   },
   (t) => [index('categories_household_idx').on(t.householdId)],

@@ -29,10 +29,15 @@ export async function connect(): Promise<Connection> {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Brak DATABASE_URL — na produkcji baza lokalna PGlite jest wyłączona.');
   }
+  mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+  return connectPglite(LOCAL_DATA_DIR);
+}
+
+/** PGlite w katalogu albo w pamięci (dataDir pominięty) — ta druga wersja służy testom. */
+export async function connectPglite(dataDir?: string): Promise<Connection> {
   const { PGlite } = await import('@electric-sql/pglite');
   const { drizzle: drizzlePglite } = await import('drizzle-orm/pglite');
-  mkdirSync(LOCAL_DATA_DIR, { recursive: true });
-  const client = new PGlite(LOCAL_DATA_DIR);
+  const client = new PGlite(dataDir);
   // API zapytań jest identyczne; typ z node-postgres upraszcza resztę kodu.
   const db = drizzlePglite(client, { schema }) as unknown as Db;
   return { db, kind: 'pglite', close: () => client.close() };

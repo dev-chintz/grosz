@@ -45,10 +45,12 @@ async function seed() {
     expense: ['Mieszkanie', 'Transport', 'Jedzenie', 'Raty', 'Abonamenty', 'Prezenty', 'Sport i zdrowie'],
     income: ['Wynagrodzenie', 'Dodatkowe'],
   } as const;
+  // Przykładowe limity: Jedzenie z zapasem, Transport celowo przekroczony (serwis auta), Mieszkanie blisko limitu.
+  const limits: Record<string, number> = { Jedzenie: zl('1200'), Transport: zl('800'), Mieszkanie: zl('3300'), Abonamenty: zl('200') };
   const categoryRows = await db
     .insert(categories)
     .values([
-      ...categoryNames.expense.map((name, i) => ({ householdId, name, direction: 'expense' as const, sortOrder: i })),
+      ...categoryNames.expense.map((name, i) => ({ householdId, name, direction: 'expense' as const, sortOrder: i, monthlyLimit: limits[name] ?? null })),
       ...categoryNames.income.map((name, i) => ({ householdId, name, direction: 'income' as const, sortOrder: i })),
     ])
     .returning();

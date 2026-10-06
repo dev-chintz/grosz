@@ -3,6 +3,7 @@
 import type { IsoDate } from './dates.ts';
 import type { RuleInput, ScheduleSummary } from './recurring.ts';
 import type { TransactionInput } from './transactions.ts';
+import type { CategoryInput, LimitState } from './categories.ts';
 
 export type Direction = 'expense' | 'income';
 export type EventKind = 'recurring' | 'oneoff';
@@ -177,3 +178,32 @@ export interface TransactionsResponse {
 }
 
 export type SaveTransactionRequest = TransactionInput;
+
+export interface CategoryDto {
+  id: string;
+  name: string;
+  direction: Direction;
+  sortOrder: number;
+  monthlyLimit: number | null;
+  /** Suma w oglądanym miesiącu: wydane + zaplanowane. */
+  total: number;
+  /** Część sumy, która już się wydarzyła (opłacone terminy, operacje do dziś). */
+  done: number;
+  /** Średnia z 3 poprzednich miesięcy. */
+  average: number;
+  /** Sumy 3 poprzednich miesięcy, od najstarszego. */
+  history: { month: string; total: number }[];
+  rulesCount: number;
+  transactionsCount: number;
+  limitState: LimitState;
+}
+
+export interface CategoriesResponse {
+  month: string;
+  today: IsoDate;
+  categories: CategoryDto[];
+  /** Operacje bez kategorii w oglądanym miesiącu. */
+  uncategorized: { expense: number; income: number };
+}
+
+export type SaveCategoryRequest = CategoryInput;

@@ -1,4 +1,4 @@
-import type { CalendarResponse, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
+import type { CalendarResponse, CategoriesResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -45,4 +45,12 @@ export const api = {
   updateTransaction: (id: string, data: SaveTransactionRequest) =>
     request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTransaction: (id: string) => request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'DELETE' }),
+
+  categories: (month: string) => request<CategoriesResponse>(`/api/categories?month=${month}`),
+  createCategory: (data: SaveCategoryRequest) => post<{ id: string }>('/api/categories', data),
+  updateCategory: (id: string, data: { name: string; monthlyLimit: number | null }) =>
+    request<{ ok: boolean }>(`/api/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  reorderCategories: (ids: string[]) => post<{ ok: boolean }>('/api/categories/reorder', { ids }),
+  deleteCategory: (id: string, moveTo: string | null) =>
+    request<{ ok: boolean }>(`/api/categories/${id}${moveTo ? `?moveTo=${moveTo}` : ''}`, { method: 'DELETE' }),
 };

@@ -10,6 +10,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { Layout } from './components/Layout.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { Calendar } from './pages/Calendar.tsx';
+import { Categories } from './pages/Categories.tsx';
 import { ComingSoon } from './pages/ComingSoon.tsx';
 import { Recurring } from './pages/Recurring.tsx';
 import { Transactions } from './pages/Transactions.tsx';
@@ -24,7 +25,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="cykliczne" element={<Recurring />} />
           <Route path="cykliczne/:id" element={<Recurring />} />
           <Route path="kalendarz" element={<Calendar />} />
-          <Route path="kategorie" element={<ComingSoon title="Kategorie" />} />
+          <Route path="kategorie" element={<Categories />} />
           <Route path="raporty" element={<ComingSoon title="Raporty" />} />
           <Route path="ustawienia" element={<ComingSoon title="Ustawienia" />} />
           <Route path="*" element={<ComingSoon title="Nie ma takiej strony" />} />

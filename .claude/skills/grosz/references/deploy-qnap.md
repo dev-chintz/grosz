@@ -51,7 +51,7 @@ Schemat żyje w `server/src/db/schema.ts`, migracje SQL w `server/drizzle/`.
 
 Przepływ przy każdej zmianie schematu:
 1. Zmień `schema.ts`.
-2. Wygeneruj migrację: `npm run db:generate -- --name <krótki_opis_po_angielsku>`.
+2. Wygeneruj migrację: `npm run db:generate -- --name <krótki_opis_po_angielsku>` (bez `--name` drizzle nada losową nazwę typu `majestic_loners` — wtedy zmień nazwę pliku i `tag` w `drizzle/meta/_journal.json`).
 3. **Przeczytaj wygenerowany SQL.** drizzle-kit przy zmianie nazwy kolumny potrafi wygenerować `DROP` + `ADD`, co kasuje dane. Jeśli widzisz `DROP COLUMN`/`DROP TABLE`, upewnij się, że to zamierzone, i powiedz o tym użytkownikowi.
 4. Zastosuj lokalnie (`npm run db:migrate` w `server/`), uruchom testy.
 5. Commit razem ze zmianą kodu, który z niej korzysta.

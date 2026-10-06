@@ -8,9 +8,11 @@ import type { Connection } from './db/client.ts';
 import { buildCalendar } from './domain/calendar.ts';
 import { buildDashboard } from './domain/dashboard.ts';
 import { currentHouseholdId } from './domain/household.ts';
+import { CategoryValidationError } from './domain/categories.ts';
 import { ValidationError } from './domain/recurring.ts';
 import { TransactionValidationError } from './domain/transactions.ts';
 import { setOccurrencePaid } from './domain/rules.ts';
+import { registerCategoryRoutes } from './routes/categories.ts';
 import { registerRecurringRoutes } from './routes/recurring.ts';
 import { registerTransactionRoutes } from './routes/transactions.ts';
 
@@ -18,7 +20,12 @@ const WEB_DIST = fileURLToPath(new URL('../../web/dist', import.meta.url));
 
 export function buildApp(connection: Connection) {
   const { db } = connection;
-  const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' } });
+  const app = Fastify({
+    logger: { level: process.env.LOG_LEVEL ?? 'info' },
+    // Domyślnie Fastify „dopasowuje” typy i zamienia null na 0 w polach liczbowych —
+    // wtedy „bez limitu” albo „bez przypomnienia” zapisałoby się jako 0. Dane przyjmujemy dokładnie takie, jakie przyszły.
+    ajv: { customOptions: { coerceTypes: false } },
+  });
 
   const requireHousehold = async () => {
     const id = await currentHouseholdId(db);
@@ -74,13 +81,16 @@ export function buildApp(connection: Connection) {
 
   registerRecurringRoutes(app, db, requireHousehold);
   registerTransactionRoutes(app, db, requireHousehold);
+  registerCategoryRoutes(app, db, requireHousehold);
 
   app.setErrorHandler((error: Error & { statusCode?: number; errors?: unknown; validation?: unknown }, _request, reply) => {
     const status = error.statusCode ?? 500;
     if (status >= 500) app.log.error(error);
     return reply.code(status).send({
       error: status >= 500 ? 'Wewnętrzny błąd serwera.' : error.validation ? 'Nieprawidłowe dane w zapytaniu.' : error.message,
-      ...(error instanceof ValidationError || error instanceof TransactionValidationError ? { errors: error.errors } : {}),
+      ...(error instanceof ValidationError || error instanceof TransactionValidationError || error instanceof CategoryValidationError
+        ? { errors: error.errors }
+        : {}),
     });
   });
 

@@ -58,6 +58,9 @@ const PATHS = {
     </>
   ),
   pause: <path d="M9 5v14M15 5v14" />,
+  pencil: <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />,
+  chevronUp: <path d="M6 15l6-6 6 6" />,
+  chevronDown: <path d="M6 9l6 6 6-6" />,
   play: <path d="M7 5l12 7-12 7z" />,
   trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
   coin: (
