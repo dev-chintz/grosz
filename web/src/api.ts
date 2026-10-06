@@ -1,10 +1,9 @@
-import type { CalendarResponse, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest } from '@grosz/shared/api';
-import type { RuleInputErrors } from '@grosz/shared/recurring';
+import type { CalendarResponse, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
 
 export class ApiError extends Error {
   readonly status: number;
-  readonly fieldErrors: RuleInputErrors;
-  constructor(message: string, status: number, fieldErrors: RuleInputErrors = {}) {
+  readonly fieldErrors: Record<string, string | undefined>;
+  constructor(message: string, status: number, fieldErrors: Record<string, string | undefined> = {}) {
     super(message);
     this.status = status;
     this.fieldErrors = fieldErrors;
@@ -26,7 +25,8 @@ const post = <T>(path: string, data?: unknown) => request<T>(path, { method: 'PO
 export const api = {
   dashboard: (month: string) => request<DashboardResponse>(`/api/dashboard?month=${month}`),
   calendar: (month: string) => request<CalendarResponse>(`/api/calendar?month=${month}`),
-  pay: (occurrenceId: string) => post<{ ok: boolean }>(`/api/occurrences/${occurrenceId}/pay`),
+  /** amount: rzeczywista kwota w groszach (rachunki o zmiennej kwocie); brak = jak zaplanowano. */
+  pay: (occurrenceId: string, amount?: number) => post<{ ok: boolean }>(`/api/occurrences/${occurrenceId}/pay`, amount === undefined ? {} : { amount }),
   unpay: (occurrenceId: string) => post<{ ok: boolean }>(`/api/occurrences/${occurrenceId}/unpay`),
 
   options: () => request<OptionsResponse>('/api/options'),
@@ -36,4 +36,13 @@ export const api = {
   pauseRule: (id: string) => post<{ ok: boolean }>(`/api/recurring/${id}/pause`),
   resumeRule: (id: string) => post<{ ok: boolean }>(`/api/recurring/${id}/resume`),
   deleteRule: (id: string) => request<{ ok: boolean }>(`/api/recurring/${id}`, { method: 'DELETE' }),
+
+  transactions: (params: { month?: string; q?: string }) => {
+    const search = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1]));
+    return request<TransactionsResponse>(`/api/transactions?${search}`);
+  },
+  createTransaction: (data: SaveTransactionRequest) => post<{ id: string }>('/api/transactions', data),
+  updateTransaction: (id: string, data: SaveTransactionRequest) =>
+    request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteTransaction: (id: string) => request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'DELETE' }),
 };

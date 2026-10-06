@@ -1,0 +1,371 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  font-size: 36px;
+  letter-spacing: -0.03em;
+}
+
+.monthSwitch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--control-h);
+}
+
+.monthName {
+  min-width: 150px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.searchLabel {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-input);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover {
+  background: var(--surface);
+}
+
+.linkButton {
+  min-height: var(--control-h);
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--control-h);
+  padding: 0 14px;
+  min-width: 280px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+.search input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  width: 100%;
+  color: var(--text);
+}
+
+.search:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.primaryButton {
+  height: var(--control-h);
+  padding: 0 18px;
+  border-radius: var(--radius-control);
+  border: 0;
+  background: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill,
+.pillDark {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.pillDark {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.pill strong,
+.pillDark strong {
+  font-weight: 600;
+}
+
+.error {
+  margin: 0;
+  color: var(--expense-text);
+  font-weight: 500;
+}
+
+/* ---------- lista ---------- */
+.list {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 8px 8px 16px;
+}
+
+.empty {
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  color: var(--text-2);
+}
+
+.empty p {
+  margin: 0;
+}
+
+.group + .group {
+  margin-top: 8px;
+}
+
+.dayHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 8px;
+  background: var(--surface);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--text-2);
+}
+
+.dayHeader strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.todayBadge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px;
+  border-radius: 14px;
+}
+
+.row:hover {
+  background: #fbfaf7;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b3f45;
+}
+
+.iconRecurring {
+  background: var(--expense-tint);
+  color: var(--expense-text);
+}
+
+.iconIncome {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nameLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.nameLine strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.note {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ground);
+}
+
+.badgeOverdue {
+  background: var(--expense-tint);
+  color: var(--expense-text);
+  font-weight: 600;
+}
+
+/* Przyszłe i nieopłacone: lżej, żeby od razu było widać, co już się wydarzyło. */
+.pending .amount {
+  color: var(--text-2);
+}
+
+.amount {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.amountIncome {
+  color: var(--text);
+}
+
+.payButton,
+.undoButton,
+.actionSpacer {
+  width: 104px;
+  flex: none;
+}
+
+.payButton,
+.undoButton {
+  height: 38px;
+  border-radius: var(--radius-control);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.payButton {
+  border: 1px solid var(--border-input);
+  background: var(--surface);
+}
+
+.payButton:hover {
+  background: var(--surface-2);
+}
+
+.undoButton {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.payButton:disabled,
+.undoButton:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 28px;
+  }
+
+  .search {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .actionSpacer {
+    display: none;
+  }
+}

@@ -1,0 +1,211 @@
+.dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  border: 0;
+  border-radius: var(--radius-card);
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.dialog::backdrop {
+  background: rgba(22, 24, 27, 0.5);
+}
+
+.form {
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head h2 {
+  font-size: 24px;
+}
+
+.close {
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-2);
+}
+
+.close:hover {
+  background: var(--surface-2);
+}
+
+/* Kwota to najważniejsze pole — większa i krojem display. */
+.amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.amount input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.amount span {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.amount:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.dateRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.dateRow > label {
+  flex: 1 1 180px;
+}
+
+.quickDates {
+  display: flex;
+  gap: 6px;
+}
+
+.quickDates button {
+  height: var(--control-h);
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-input);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quickDates button:hover {
+  background: var(--surface-2);
+}
+
+.quickDates button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.error {
+  margin: 0;
+  color: var(--expense-text);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.footer > :first-child:not(.ghostButton) {
+  margin-right: auto;
+}
+
+.ghostButton,
+.saveButton,
+.deleteButton {
+  height: var(--control-h);
+  padding: 0 18px;
+  border-radius: var(--radius-control);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ghostButton {
+  border: 1px solid var(--border-input);
+  background: var(--surface);
+  font-weight: 500;
+}
+
+.ghostButton:hover {
+  background: var(--surface-2);
+}
+
+.saveButton {
+  border: 0;
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.deleteButton {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  background: var(--expense-text);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.saveButton:disabled,
+.deleteButton:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.linkDanger,
+.linkButton {
+  min-height: var(--control-h);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.linkDanger {
+  color: var(--expense-text);
+}
+
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #3b3f45;
+}

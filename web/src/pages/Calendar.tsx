@@ -5,6 +5,7 @@ import { addMonths, parseIso, today as todayIso, weekday, type IsoDate } from '@
 import { formatCompact, formatLongDate, formatPLN, formatShortDate, MONTHS_NOMINATIVE, plural, WEEKDAYS, WEEKDAYS_SHORT } from '@grosz/shared/format';
 import { api } from '../api.ts';
 import { Icon } from '../components/Icon.tsx';
+import { usePayment } from '../components/usePayment.tsx';
 import styles from './Calendar.module.css';
 
 const MAX_CHIPS = 3;
@@ -169,21 +170,14 @@ function MonthCells({ days, today, selected, onPick }: { days: CalendarDay[]; to
 }
 
 function DayPanel({ day, today, onChanged }: { day: CalendarDay; today: IsoDate; onChanged: () => void }) {
-  const [busy, setBusy] = useState<string | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
+  const payment = usePayment(onChanged);
+  const busy = payment.busy;
+  const failed = payment.error;
 
-  const toggle = async (e: CalendarEvent) => {
+  const toggle = (e: CalendarEvent) => {
     if (!e.occurrenceId) return;
-    setBusy(e.occurrenceId);
-    setFailed(null);
-    try {
-      await (e.done ? api.unpay(e.occurrenceId) : api.pay(e.occurrenceId));
-      onChanged();
-    } catch (err) {
-      setFailed((err as Error).message);
-    } finally {
-      setBusy(null);
-    }
+    if (e.done) void payment.unpay(e.occurrenceId);
+    else payment.pay({ occurrenceId: e.occurrenceId, name: e.name, amount: e.amount, variableAmount: e.variableAmount, direction: e.direction });
   };
 
   const status = (e: CalendarEvent) => {
@@ -208,6 +202,7 @@ function DayPanel({ day, today, onChanged }: { day: CalendarDay; today: IsoDate;
           {failed}
         </p>
       )}
+      {payment.dialog}
       {day.events.length === 0 && <p className={styles.dayEmpty}>Tego dnia nic nie jest zaplanowane.</p>}
       <ul className={styles.dayEvents}>
         {day.events.map((e, i) => (

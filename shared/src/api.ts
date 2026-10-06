@@ -2,6 +2,7 @@
 
 import type { IsoDate } from './dates.ts';
 import type { RuleInput, ScheduleSummary } from './recurring.ts';
+import type { TransactionInput } from './transactions.ts';
 
 export type Direction = 'expense' | 'income';
 export type EventKind = 'recurring' | 'oneoff';
@@ -138,3 +139,41 @@ export interface CalendarResponse {
     endBalance: number;
   };
 }
+
+export type LedgerStatus = 'done' | 'planned' | 'overdue';
+
+/** Wiersz listy Transakcje: operacja jednorazowa albo termin cykliczny. */
+export interface LedgerItem {
+  kind: EventKind;
+  /** id transakcji albo terminu (occurrence). */
+  id: string;
+  /** Tylko dla terminów cyklicznych — link do edycji reguły. */
+  ruleId: string | null;
+  date: IsoDate;
+  name: string;
+  direction: Direction;
+  amount: number;
+  /** Kwota zaplanowana, gdy rzeczywista jest inna (rachunki o zmiennej kwocie). */
+  plannedAmount: number | null;
+  variableAmount: boolean;
+  categoryId: string | null;
+  categoryName: string | null;
+  accountId: string | null;
+  accountName: string | null;
+  note: string | null;
+  status: LedgerStatus;
+}
+
+export interface TransactionsResponse {
+  today: IsoDate;
+  /** YYYY-MM albo null przy wyszukiwaniu w całej historii. */
+  month: string | null;
+  query: string | null;
+  /** Od najnowszych. */
+  items: LedgerItem[];
+  /** Wyszukiwanie zwraca najwyżej tyle wyników. */
+  limited: boolean;
+  totals: { income: number; expense: number };
+}
+
+export type SaveTransactionRequest = TransactionInput;

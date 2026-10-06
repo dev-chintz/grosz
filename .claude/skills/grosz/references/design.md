@@ -119,6 +119,10 @@ Każdy komponent poniżej istnieje w mockupie — sprawdź tam wygląd, zanim zb
 
 Gotowe w kodzie — używaj ich zamiast pisać nowe: `Segmented`, `Switch`, `Field` i klasa `inputClass` w `web/src/components/controls.tsx`; ikony w `web/src/components/Icon.tsx` (dodawaj nowe ścieżki tam). Wzór formularza z walidacją przy polach, podglądem na żywo i oknem potwierdzenia: `web/src/pages/recurring/RuleEditor.tsx`.
 
+- **Dodawanie/edycja operacji jednorazowej:** `TransactionDialog` (`web/src/components/TransactionDialog.tsx`) — natywny `<dialog>`, kwota dużym krojem display, szybkie daty Dziś/Wczoraj/Przedwczoraj. Używany na Pulpicie (przycisk „Dodaj”) i w Transakcjach; nie buduj drugiego formularza.
+- **Opłacanie terminu cyklicznego:** zawsze przez hook `usePayment` (`web/src/components/usePayment.tsx`), nie przez `api.pay` bezpośrednio — przy kwocie zmiennej pyta o rzeczywistą kwotę. Hook zwraca `dialog`, który trzeba wyrenderować.
+- Kwota zmienna: prefiks `~` tylko dopóki termin jest nieopłacony; po opłaceniu pokazujemy rzeczywistą kwotę, a prognozę w metadanych („prognoza 180,00 zł”).
+
 - **Sidebar:** tło `--ink`, logo (kafelek 34 px w `--accent` + słowo „grosz” Bricolage 26 px), menu: Pulpit, Transakcje, Cykliczne (z licznikiem), Kalendarz, Kategorie, Raporty, Ustawienia. Aktywna pozycja: tło `--ink-3`, biały tekst, kropka `--accent` po prawej. Na dole karta gospodarstwa (`--ink-2`) z linkiem „Zaproś domownika”.
 - **Nagłówek strony:** strzałki poprzedni/następny miesiąc (44 px, obrys `--border-input`), h1 z miesiącem, po prawej wyszukiwarka i przycisk główny „Dodaj” (`--accent`, ikona +).
 - **Karta główna (hero):** tło `--ink`, „Zostaje do wydania…”, kwota 80 px, zdanie z kwotą dzienną, pasek podziału wpływów (stałe `--expense` / jednorazowe `--expense-soft` / wolne `--accent`, odstęp 3 px między segmentami) z legendą.

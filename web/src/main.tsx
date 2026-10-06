@@ -12,6 +12,7 @@ import { Dashboard } from './pages/Dashboard.tsx';
 import { Calendar } from './pages/Calendar.tsx';
 import { ComingSoon } from './pages/ComingSoon.tsx';
 import { Recurring } from './pages/Recurring.tsx';
+import { Transactions } from './pages/Transactions.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -19,7 +20,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="transakcje" element={<ComingSoon title="Transakcje" />} />
+          <Route path="transakcje" element={<Transactions />} />
           <Route path="cykliczne" element={<Recurring />} />
           <Route path="cykliczne/:id" element={<Recurring />} />
           <Route path="kalendarz" element={<Calendar />} />

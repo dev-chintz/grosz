@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import type { DashboardResponse, TimelineDay } from '@grosz/shared/api';
+import { Link, useNavigate } from 'react-router';
+import type { DashboardResponse, OptionsResponse, TimelineDay } from '@grosz/shared/api';
 import { addMonths, daysBetween, parseIso, today, weekday } from '@grosz/shared/dates';
 import {
   formatLongDate,
@@ -16,6 +16,8 @@ import {
 } from '@grosz/shared/format';
 import { api } from '../api.ts';
 import { Icon } from '../components/Icon.tsx';
+import { TransactionDialog } from '../components/TransactionDialog.tsx';
+import { usePayment } from '../components/usePayment.tsx';
 import styles from './Dashboard.module.css';
 
 const shiftMonth = (month: string, by: number) => {
@@ -43,6 +45,12 @@ export function Dashboard() {
   }, [month, reloadKey]);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+  const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
+  const [options, setOptions] = useState<OptionsResponse | null>(null);
+  useEffect(() => {
+    api.options().then(setOptions, () => {});
+  }, []);
   const [year, monthNumber] = month.split('-').map(Number) as [number, number];
   const shown = data?.month === month ? data : null;
 
@@ -61,12 +69,21 @@ export function Dashboard() {
           </button>
         </div>
         <div className={styles.headerActions}>
-          <label className={styles.search}>
-            <Icon name="search" size={18} strokeWidth={2} />
-            <span className="sr-only">Szukaj</span>
-            <input type="search" placeholder="Szukaj transakcji…" />
-          </label>
-          <button type="button" className={styles.primaryButton}>
+          <form
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = new FormData(e.currentTarget).get('q')?.toString().trim();
+              if (q) navigate(`/transakcje?q=${encodeURIComponent(q)}`);
+            }}
+          >
+            <label className={styles.search}>
+              <Icon name="search" size={18} strokeWidth={2} />
+              <span className="sr-only">Szukaj transakcji</span>
+              <input type="search" name="q" placeholder="Szukaj transakcji…" />
+            </label>
+          </form>
+          <button type="button" className={styles.primaryButton} onClick={() => setAdding(true)}>
             <Icon name="plus" size={18} strokeWidth={2.2} />
             Dodaj
           </button>
@@ -100,6 +117,15 @@ export function Dashboard() {
           </div>
         </>
       )}
+
+      <TransactionDialog
+        open={adding}
+        item={null}
+        options={options}
+        today={shown?.today ?? today()}
+        onClose={() => setAdding(false)}
+        onSaved={reload}
+      />
     </>
   );
 }
@@ -293,21 +319,7 @@ function MonthTimeline({ data }: { data: DashboardResponse }) {
 }
 
 function Upcoming({ data, onChanged }: { data: DashboardResponse; onChanged: () => void }) {
-  const [busy, setBusy] = useState<string | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
-
-  const toggle = async (id: string, paid: boolean) => {
-    setBusy(id);
-    setFailed(null);
-    try {
-      await (paid ? api.unpay(id) : api.pay(id));
-      onChanged();
-    } catch (e) {
-      setFailed((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
+  const payment = usePayment(onChanged);
 
   return (
     <section aria-labelledby="upcoming-h" className={`${styles.card} ${styles.wide}`}>
@@ -317,7 +329,8 @@ function Upcoming({ data, onChanged }: { data: DashboardResponse; onChanged: () 
           Wszystkie cykliczne <Icon name="arrowRight" size={16} strokeWidth={2} />
         </Link>
       </div>
-      {failed && <p className={styles.errorText} role="alert">{failed}</p>}
+      {payment.error && <p className={styles.errorText} role="alert">{payment.error}</p>}
+      {payment.dialog}
       {data.upcoming.length === 0 && <p className={styles.muted}>Do końca miesiąca nie ma już stałych płatności.</p>}
       <ul className={styles.list}>
         {data.upcoming.map((u) => {
@@ -333,15 +346,19 @@ function Upcoming({ data, onChanged }: { data: DashboardResponse; onChanged: () 
                 <span>{u.meta}</span>
               </span>
               <span className={styles.amount}>
-                {u.variableAmount && '~'}
+                {u.variableAmount && !u.paid && '~'}
                 {formatPLN(u.amount)}
               </span>
               <button
                 type="button"
                 className={u.paid ? styles.paidButton : styles.payButton}
                 aria-pressed={u.paid}
-                disabled={busy === u.occurrenceId}
-                onClick={() => toggle(u.occurrenceId, u.paid)}
+                disabled={payment.busy === u.occurrenceId}
+                onClick={() =>
+                  u.paid
+                    ? payment.unpay(u.occurrenceId)
+                    : payment.pay({ occurrenceId: u.occurrenceId, name: u.name, amount: u.amount, variableAmount: u.variableAmount, direction: 'expense' })
+                }
               >
                 {u.paid && <Icon name="check" size={16} strokeWidth={2.4} />}
                 {u.paid ? 'Opłacone' : 'Opłać'}
