@@ -1,4 +1,5 @@
-import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SaveMemberRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse, UpdateStatusResponse } from '@grosz/shared/api';
+import type { ImportRow } from '@grosz/shared/import';
+import type { ImportBatchDto, ImportCommitRequest, ImportPreviewResponse, CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SaveMemberRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse, UpdateStatusResponse } from '@grosz/shared/api';
 
 /** Zdarzenie okna: zmieniono nazwę gospodarstwa (detail = nowa nazwa). Odświeża kartę w sidebarze. */
 export const HOUSEHOLD_CHANGED = 'grosz:household-changed';
@@ -72,6 +73,11 @@ export const api = {
   updateTransaction: (id: string, data: SaveTransactionRequest) =>
     request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTransaction: (id: string) => request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'DELETE' }),
+
+  importPreview: (rows: ImportRow[]) => post<ImportPreviewResponse>('/api/import/preview', { rows }),
+  importCommit: (data: ImportCommitRequest) => post<{ batchId: string; created: number; matched: number }>('/api/import/commit', data),
+  importBatches: () => request<ImportBatchDto[]>('/api/import/batches'),
+  undoImport: (id: string) => request<{ ok: boolean }>(`/api/import/batches/${id}`, { method: 'DELETE' }),
 
   reports: (months: 3 | 6 | 12) => request<ReportsResponse>(`/api/reports?months=${months}`),
 

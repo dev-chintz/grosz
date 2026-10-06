@@ -161,6 +161,10 @@ export const occurrences = pgTable(
     paidOn: date('paid_on'),
     /** Kiedy termin zaksięgowano automatycznie; ustawiony znacznik chroni przed ponownym zaksięgowaniem po ręcznym cofnięciu płatności. */
     autoBookedAt: timestamp('auto_booked_at', { withTimezone: true }),
+    /** Import wyciągu, który oznaczył termin jako opłacony (cofnięcie importu przywraca „zaplanowane”). */
+    importBatchId: uuid('import_batch_id').references(() => importBatches.id, { onDelete: 'set null' }),
+    /** Skrót wiersza wyciągu dopasowanego do tego terminu — ponowny import go nie zdubluje. */
+    importKey: text('import_key'),
     createdAt: createdAt(),
   },
   (t) => [
@@ -184,7 +188,30 @@ export const transactions = pgTable(
     amount: integer('amount').notNull(),
     description: text('description').notNull(),
     note: text('note'),
+    /** Import wyciągu, z którego pochodzi operacja; null = wpisana ręcznie. */
+    importBatchId: uuid('import_batch_id').references(() => importBatches.id, { onDelete: 'set null' }),
+    /** Skrót wiersza wyciągu (SHA-256) — ten sam wiersz w kolejnym imporcie jest rozpoznawany jako duplikat. */
+    importKey: text('import_key'),
     createdAt: createdAt(),
   },
-  (t) => [index('transactions_household_date_idx').on(t.householdId, t.date)],
+  (t) => [
+    index('transactions_household_date_idx').on(t.householdId, t.date),
+    uniqueIndex('transactions_household_import_key_uq').on(t.householdId, t.importKey),
+  ],
+);
+
+/** Paczka importu wyciągu — jednostka cofania. */
+export const importBatches = pgTable(
+  'import_batches',
+  {
+    id: id(),
+    householdId: householdId(),
+    bank: text('bank').notNull(),
+    fileName: text('file_name').notNull(),
+    accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    createdCount: integer('created_count').notNull().default(0),
+    matchedCount: integer('matched_count').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('import_batches_household_idx').on(t.householdId)],
 );

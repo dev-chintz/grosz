@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { registerAuth } from './routes/auth.ts';
+import { registerImportRoutes } from './routes/import.ts';
 import { registerUpdateRoutes } from './routes/update.ts';
 import { fileURLToPath } from 'node:url';
 import fastifyStatic from '@fastify/static';
@@ -86,6 +87,7 @@ export function buildApp(connection: Connection) {
 
   registerRecurringRoutes(app, db, requireHousehold);
   registerTransactionRoutes(app, db, requireHousehold);
+  registerImportRoutes(app, db, requireHousehold);
   registerCategoryRoutes(app, db, requireHousehold);
   registerReportRoutes(app, db, requireHousehold);
   registerSettingsRoutes(app, db, requireHousehold);

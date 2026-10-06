@@ -288,3 +288,39 @@ export interface UpdateStatusResponse {
     } | null;
   };
 }
+
+export type ImportAction = 'create' | 'match' | 'skip';
+
+export interface ImportPreviewRow {
+  key: string;
+  date: IsoDate;
+  direction: Direction;
+  amount: number;
+  description: string;
+  /** imported: już zaimportowany (pomijamy); matched: pasuje do terminu cyklicznego; duplicate: podobna operacja wpisana ręcznie. */
+  status: 'new' | 'imported' | 'matched' | 'duplicate';
+  suggestedCategoryId: string | null;
+  match: { occurrenceId: string; name: string; dueDate: IsoDate; plannedAmount: number } | null;
+  duplicateOf: { id: string; description: string; date: IsoDate } | null;
+  defaultAction: ImportAction;
+}
+
+export interface ImportPreviewResponse {
+  rows: ImportPreviewRow[];
+}
+
+export interface ImportCommitRequest {
+  bank: string;
+  fileName: string;
+  accountId: string | null;
+  rows: { key: string; date: IsoDate; direction: Direction; amount: number; description: string; categoryId: string | null; action: ImportAction; occurrenceId: string | null }[];
+}
+
+export interface ImportBatchDto {
+  id: string;
+  bank: string;
+  fileName: string;
+  createdCount: number;
+  matchedCount: number;
+  createdAt: string;
+}

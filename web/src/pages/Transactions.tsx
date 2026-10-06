@@ -124,6 +124,9 @@ export function Transactions() {
             <Icon name="plus" size={18} strokeWidth={2.2} />
             Dodaj
           </button>
+          <Link to="/transakcje/import" className={styles.importLink}>
+            Importuj wyciąg
+          </Link>
         </div>
       </header>
 

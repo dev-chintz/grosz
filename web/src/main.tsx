@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AuthGate } from './components/AuthGate.tsx';
 import { Layout } from './components/Layout.tsx';
+import { Import } from './pages/Import.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { Calendar } from './pages/Calendar.tsx';
 import { Categories } from './pages/Categories.tsx';
@@ -26,6 +27,7 @@ createRoot(document.getElementById('root')!).render(
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="transakcje" element={<Transactions />} />
+          <Route path="transakcje/import" element={<Import />} />
           <Route path="cykliczne" element={<Recurring />} />
           <Route path="cykliczne/:id" element={<Recurring />} />
           <Route path="kalendarz" element={<Calendar />} />

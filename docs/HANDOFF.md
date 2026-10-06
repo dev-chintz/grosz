@@ -14,7 +14,9 @@ Stan z 2026-10-06. Historia czatu i lokalna pamięć Claude'a **nie przenoszą s
 
 **Logowanie (od migracji 0005):** cała aplikacja wymaga konta. Przy pustej bazie kont ekran „Pierwsze uruchomienie” prosi o kod z logów: `docker compose logs app | grep Kod` (nowy kod przy każdym starcie, działa do założenia konta). Hasła scrypt, sesja 30 dni w ciasteczku httpOnly, blokada na 15 min po 5 złych próbach. Osoby z kontem nie da się usunąć w Ustawieniach.
 
-**Nie jest zrobione:** import z kopii, zakładanie kont dla kolejnych domowników.
+**Import wyciągu (Transakcje → Importuj wyciąg, migracja 0006):** Alior — CSV z „Historii operacji” (`shared/src/import.ts`, kolejne banki jako nowe czytniki w `parseBankFile`). Podgląd: nowe / już zaimportowane (klucz wiersza, SHA-256) / dopasowane do terminu cyklicznego (±5 dni, kwota równa lub ±40% dla zmiennych) / możliwy duplikat ręcznej operacji (±3 dni). Paczka importu do cofnięcia. Prawdziwych wyciągów nie commitujemy — testy mają dane zanonimizowane.
+
+**Nie jest zrobione:** import z kopii JSON, zakładanie kont dla kolejnych domowników.
 
 **Aktualizacja z przycisku (Ustawienia → Aktualizacja):** kontener `updater` (wzorem Anvero, `updater/server.py`) ma gniazdo Dockera, nie wystawia portu, przyjmuje tylko żądania z `UPDATER_TOKEN` z `.env` i uruchamia jedno: `sh deploy/deploy.sh`. Karta pokazuje wersję (commit wbudowany w obraz jako GIT_COMMIT) i zmiany z GitHuba, kroki na żywo, po restarcie przeładowuje stronę. Bez tokenu przycisk jest nieaktywny. Zmiana kodu samego updatera wchodzi tylko przy ręcznym `sh deploy/deploy.sh` (z wnętrza updatera nie restartujemy go).
 

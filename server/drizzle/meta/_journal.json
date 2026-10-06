@@ -43,6 +43,13 @@
       "when": 1791302817453,
       "tag": "0005_auth_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791307471731,
+      "tag": "0006_bank_import",
+      "breakpoints": true
     }
   ]
 }
