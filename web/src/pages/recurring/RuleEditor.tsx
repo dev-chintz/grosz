@@ -5,7 +5,7 @@ import { formatDateWithWeekday, formatPLN, MONTHS_LOCATIVE, parsePLN, plural, WE
 import type { RecurrenceUnit } from '@grosz/shared/recurrence';
 import { summarizeSchedule, toRecurrenceRule, upcomingDates, validateRuleInput, type RuleInput, type RuleInputErrors } from '@grosz/shared/recurring';
 import { api, ApiError } from '../../api.ts';
-import { Field, inputClass, Segmented, Switch } from '../../components/controls.tsx';
+import { Field, inputClass, MemberField, Segmented, Switch } from '../../components/controls.tsx';
 import { Icon } from '../../components/Icon.tsx';
 import styles from './RuleEditor.module.css';
 
@@ -38,7 +38,7 @@ function initialForm(rule: RecurringRuleDto | null, options: OptionsResponse, to
   if (rule) {
     const { amount, ...rest } = rule;
     const input: Omit<RuleInput, 'amount'> = {
-      name: rest.name, direction: rest.direction, categoryId: rest.categoryId, accountId: rest.accountId, payee: rest.payee,
+      name: rest.name, direction: rest.direction, categoryId: rest.categoryId, accountId: rest.accountId, userId: rest.userId, payee: rest.payee,
       variableAmount: rest.variableAmount, unit: rest.unit, interval: rest.interval, startDate: rest.startDate,
       dayOfMonth: rest.dayOfMonth, lastDayOfMonth: rest.lastDayOfMonth, weekendRule: rest.weekendRule, endType: rest.endType,
       endDate: rest.endDate, endCount: rest.endCount, remindDaysBefore: rest.remindDaysBefore, autoBook: rest.autoBook, note: rest.note,
@@ -50,6 +50,7 @@ function initialForm(rule: RecurringRuleDto | null, options: OptionsResponse, to
     direction: 'expense',
     categoryId: null,
     accountId: options.accounts[0]?.id ?? null,
+    userId: null,
     payee: null,
     amountText: '',
     variableAmount: false,
@@ -234,6 +235,7 @@ export function RuleEditor({
               ))}
             </select>
           </Field>
+          <MemberField members={options.members} value={form.userId} onChange={(userId) => set('userId', userId)} />
           <Field label="Odbiorca" hint="opcjonalnie">
             <input className={inputClass} value={form.payee ?? ''} onChange={(e) => set('payee', e.target.value || null)} />
           </Field>

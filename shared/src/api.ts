@@ -5,7 +5,7 @@ import type { RuleInput, ScheduleSummary } from './recurring.ts';
 import type { TransactionInput } from './transactions.ts';
 import type { CategoryInput, LimitState } from './categories.ts';
 import type { ReportCategory, ReportMonth, ReportTotals } from './reports.ts';
-import type { AccountInput, HouseholdInput } from './settings.ts';
+import type { AccountInput, HouseholdInput, MemberInput } from './settings.ts';
 
 export type Direction = 'expense' | 'income';
 export type EventKind = 'recurring' | 'oneoff';
@@ -94,6 +94,7 @@ export interface RecurringListResponse {
 export interface OptionsResponse {
   categories: { id: string; name: string; direction: Direction }[];
   accounts: { id: string; name: string }[];
+  members: { id: string; name: string }[];
 }
 
 export interface SaveRuleRequest extends RuleInput {
@@ -163,6 +164,9 @@ export interface LedgerItem {
   categoryName: string | null;
   accountId: string | null;
   accountName: string | null;
+  /** Domownik; null = wspólna. */
+  userId: string | null;
+  userName: string | null;
   note: string | null;
   status: LedgerStatus;
 }
@@ -234,11 +238,22 @@ export interface AccountDto {
   transactionsCount: number;
 }
 
+export interface MemberDto {
+  id: string;
+  name: string;
+  /** Ile płatności cyklicznych i operacji jednorazowych jest przypisanych do osoby. */
+  rulesCount: number;
+  transactionsCount: number;
+}
+
 export interface SettingsResponse {
   household: { name: string; currency: string };
+  /** Alfabetycznie. */
+  members: MemberDto[];
   /** Aktywne najpierw, potem zarchiwizowane; w grupach alfabetycznie. */
   accounts: AccountDto[];
 }
 
 export type SaveAccountRequest = AccountInput;
 export type SaveHouseholdRequest = HouseholdInput;
+export type SaveMemberRequest = MemberInput;

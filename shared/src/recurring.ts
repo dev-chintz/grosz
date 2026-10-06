@@ -10,6 +10,8 @@ export interface RuleInput {
   direction: Direction;
   categoryId: string | null;
   accountId: string | null;
+  /** Domownik, którego dotyczy płatność; null = wspólna. */
+  userId: string | null;
   payee: string | null;
   /** W groszach, > 0. */
   amount: number;

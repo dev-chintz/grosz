@@ -2,10 +2,10 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import type { CategoriesResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse } from '@grosz/shared/api';
+import type { CategoriesResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse, TransactionsResponse } from '@grosz/shared/api';
 import { buildApp } from './app.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
-import { accounts, households, transactions } from './db/schema.ts';
+import { accounts, households, transactions, users } from './db/schema.ts';
 
 let connection: Connection;
 let app: ReturnType<typeof buildApp>;
@@ -255,5 +255,105 @@ describe('eksport danych', () => {
     expect((await app.inject({ url: '/api/export/transactions?from=2031-06-30&to=2031-05-01' })).statusCode).toBe(400);
     expect((await app.inject({ url: '/api/export/transactions?from=2026-02-30' })).statusCode).toBe(400);
     expect((await app.inject({ url: '/api/export/transactions?from=wczoraj' })).statusCode).toBe(400);
+  });
+});
+
+describe('domownicy', () => {
+  const member = (name: string) => app.inject({ method: 'POST', url: '/api/members', payload: { name } });
+  const settings = async () => json<SettingsResponse>(await app.inject({ url: '/api/settings' }));
+  const addTransaction = (payload: object) => app.inject({ method: 'POST', url: '/api/transactions', payload });
+  const ledger = async (query: string) => json<TransactionsResponse>(await app.inject({ url: `/api/transactions?month=2033-04&${query}` }));
+
+  it('dodawanie, alfabetyczna lista, duplikat (bez względu na wielkość liter) i edycja', async () => {
+    const piotr = await member('Piotr');
+    expect(piotr.statusCode).toBe(201);
+    const anna = await member('Anna');
+    expect(anna.statusCode).toBe(201);
+
+    const duplicate = await member('ANNA');
+    expect(duplicate.statusCode).toBe(400);
+    expect(json<{ errors: { name: string } }>(duplicate).errors.name).toBeDefined();
+
+    const list = (await settings()).members;
+    expect(list.map((m) => m.name)).toEqual(['Anna', 'Piotr']);
+    expect(list[0]).toMatchObject({ rulesCount: 0, transactionsCount: 0 });
+
+    const id = json<{ id: string }>(anna).id;
+    expect((await app.inject({ method: 'PUT', url: `/api/members/${id}`, payload: { name: 'Ania' } })).statusCode).toBe(200);
+    expect((await settings()).members.map((m) => m.name)).toEqual(['Ania', 'Piotr']);
+    expect((await app.inject({ method: 'PUT', url: `/api/members/${id}`, payload: { name: ' ' } })).statusCode).toBe(400);
+  });
+
+  it('operacje i płatności cykliczne przypisane do osoby: nazwa w liście, filtr, eksport i opcje formularzy', async () => {
+    const [ania, piotr] = (await settings()).members;
+    await addTransaction({ direction: 'expense', amount: 1_000, date: '2033-04-05', description: 'Zakup Ani', userId: ania!.id });
+    await addTransaction({ direction: 'expense', amount: 2_000, date: '2033-04-06', description: 'Zakup Piotra', userId: piotr!.id });
+    await addTransaction({ direction: 'expense', amount: 3_000, date: '2033-04-07', description: 'Zakup wspólny' });
+
+    const all = await ledger('');
+    expect(all.items.find((i) => i.name === 'Zakup Ani')).toMatchObject({ userId: ania!.id, userName: 'Ania' });
+    expect(all.items.find((i) => i.name === 'Zakup wspólny')).toMatchObject({ userId: null, userName: null });
+
+    const onlyAnia = (await ledger(`user=${ania!.id}`)).items.map((i) => i.name);
+    expect(onlyAnia).toContain('Zakup Ani');
+    expect(onlyAnia).not.toContain('Zakup Piotra');
+    expect(onlyAnia).not.toContain('Zakup wspólny');
+
+    const shared = (await ledger('user=none')).items.map((i) => i.name);
+    expect(shared).toContain('Zakup wspólny');
+    expect(shared).not.toContain('Zakup Ani');
+
+    expect((await app.inject({ url: '/api/transactions?user=nie-uuid' })).statusCode).toBe(400);
+
+    const rule = await app.inject({
+      method: 'POST',
+      url: '/api/recurring',
+      payload: {
+        name: 'Karnet Ani', direction: 'expense', categoryId: null, accountId: null, userId: ania!.id, payee: null, amount: 15_000, variableAmount: false,
+        unit: 'month', interval: 1, startDate: '2033-04-10', dayOfMonth: null, lastDayOfMonth: false, weekendRule: 'none', endType: 'never',
+        endDate: null, endCount: null, remindDaysBefore: null, autoBook: false, note: null,
+      },
+    });
+    expect(rule.statusCode).toBe(201);
+    const rules = json<RecurringListResponse>(await app.inject({ url: '/api/recurring' })).rules;
+    expect(rules.find((r) => r.name === 'Karnet Ani')?.userId).toBe(ania!.id);
+    expect((await ledger(`user=${ania!.id}`)).items.map((i) => i.name)).toContain('Karnet Ani');
+
+    expect(json<OptionsResponse>(await app.inject({ url: '/api/options' })).members.map((m) => m.name)).toEqual(['Ania', 'Piotr']);
+    expect((await settings()).members.find((m) => m.id === ania!.id)).toMatchObject({ transactionsCount: 1, rulesCount: 1 });
+
+    const csv = await app.inject({ url: '/api/export/transactions?from=2033-04-01&to=2033-04-30' });
+    expect(csv.body).toContain(';Ania;');
+    const backup = JSON.parse((await app.inject({ url: '/api/export/backup' })).body) as { users: { name: string }[] };
+    expect(backup.users.map((u) => u.name)).toEqual(['Ania', 'Piotr']);
+  });
+
+  it('nie da się przypisać osoby spoza gospodarstwa ani nieistniejącej', async () => {
+    const [other] = await connection.db.insert(households).values({ name: 'Inne gospodarstwo' }).returning();
+    const [stranger] = await connection.db.insert(users).values({ householdId: other!.id, name: 'Obca osoba' }).returning();
+
+    for (const userId of [stranger!.id, '00000000-0000-4000-8000-000000000000']) {
+      const res = await addTransaction({ direction: 'expense', amount: 100, date: '2033-04-08', description: 'Nie powinno przejść', userId });
+      expect(res.statusCode).toBe(400);
+      expect(json<{ errors: { userId: string } }>(res).errors.userId).toBeDefined();
+    }
+    expect((await ledger('')).items.map((i) => i.name)).not.toContain('Nie powinno przejść');
+
+    // cudzej osoby nie można też edytować ani usunąć
+    expect((await app.inject({ method: 'PUT', url: `/api/members/${stranger!.id}`, payload: { name: 'Zmieniona' } })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'DELETE', url: `/api/members/${stranger!.id}` })).statusCode).toBe(404);
+  });
+
+  it('usunięcie osoby zostawia jej operacje jako wspólne, a ostatniej osoby nie da się usunąć', async () => {
+    const [ania, piotr] = (await settings()).members;
+    expect((await app.inject({ method: 'DELETE', url: `/api/members/${piotr!.id}` })).statusCode).toBe(200);
+
+    const item = (await ledger('')).items.find((i) => i.name === 'Zakup Piotra');
+    expect(item).toMatchObject({ userId: null, userName: null });
+    expect((await settings()).members.map((m) => m.name)).toEqual(['Ania']);
+
+    const last = await app.inject({ method: 'DELETE', url: `/api/members/${ania!.id}` });
+    expect(last.statusCode).toBe(400);
+    expect(json<{ error: string }>(last).error).toContain('co najmniej jedna');
   });
 });

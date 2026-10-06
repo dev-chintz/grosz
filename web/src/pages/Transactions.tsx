@@ -4,7 +4,7 @@ import type { LedgerItem, OptionsResponse, TransactionsResponse } from '@grosz/s
 import { addMonths, parseIso, today as todayIso, weekday, type IsoDate } from '@grosz/shared/dates';
 import { formatLongDate, formatPLN, MONTHS_NOMINATIVE, WEEKDAYS } from '@grosz/shared/format';
 import { api } from '../api.ts';
-import { Segmented } from '../components/controls.tsx';
+import { inputClass, Segmented } from '../components/controls.tsx';
 import { Icon } from '../components/Icon.tsx';
 import { TransactionDialog } from '../components/TransactionDialog.tsx';
 import { usePayment } from '../components/usePayment.tsx';
@@ -32,6 +32,7 @@ export function Transactions() {
   const [params, setParams] = useSearchParams();
   const month = params.get('month') ?? todayIso().slice(0, 7);
   const query = params.get('q')?.trim() ?? '';
+  const user = params.get('user') ?? '';
   const [searchText, setSearchText] = useState(query);
   const [data, setData] = useState<TransactionsResponse | null>(null);
   const [options, setOptions] = useState<OptionsResponse | null>(null);
@@ -46,14 +47,14 @@ export function Transactions() {
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    api.transactions(query ? { q: query } : { month }).then(
+    api.transactions({ ...(query ? { q: query } : { month }), ...(user ? { user } : {}) }).then(
       (result) => !cancelled && setData(result),
       (e: Error) => !cancelled && setError(e.message),
     );
     return () => {
       cancelled = true;
     };
-  }, [month, query, reloadKey]);
+  }, [month, query, user, reloadKey]);
 
   useEffect(() => {
     api.options().then(setOptions, () => {});
@@ -147,13 +148,40 @@ export function Transactions() {
         </p>
       )}
 
-      <Segmented label="Filtr" tone="ground" value={filter} onChange={setFilter} options={FILTERS.map((f) => ({ value: f.value, label: f.label, count: counts[f.value] }))} />
+      <div className={styles.filters}>
+        <Segmented label="Filtr" tone="ground" value={filter} onChange={setFilter} options={FILTERS.map((f) => ({ value: f.value, label: f.label, count: counts[f.value] }))} />
+        {options && options.members.length > 1 && (
+          <label className={styles.userFilter}>
+            Kto
+            <select
+              className={inputClass}
+              value={user}
+              onChange={(e) =>
+                setParams((p) => {
+                  const next = new URLSearchParams(p);
+                  if (e.target.value) next.set('user', e.target.value);
+                  else next.delete('user');
+                  return next;
+                })
+              }
+            >
+              <option value="">Wszyscy</option>
+              <option value="none">Wspólne</option>
+              {options.members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
       <section aria-label="Lista operacji" className={styles.list}>
         {!shown && !error && <p className={styles.empty}>Wczytywanie…</p>}
         {shown && groups.length === 0 && (
           <div className={styles.empty}>
-            <p>{query ? 'Nic nie znaleziono.' : filter === 'all' ? 'W tym miesiącu nie ma jeszcze żadnych operacji.' : 'Brak operacji tego rodzaju.'}</p>
+            <p>{query ? 'Nic nie znaleziono.' : user ? 'Brak operacji dla wybranego filtra osoby w tym miesiącu.' : filter === 'all' ? 'W tym miesiącu nie ma jeszcze żadnych operacji.' : 'Brak operacji tego rodzaju.'}</p>
             {!query && filter === 'all' && (
               <button type="button" className={styles.primaryButton} onClick={() => setEditing({ item: null })}>
                 <Icon name="plus" size={18} strokeWidth={2.2} />
@@ -200,7 +228,7 @@ export function Transactions() {
 
 function Row({ item, busy, onEdit, onPay, onUnpay }: { item: LedgerItem; busy: boolean; onEdit: () => void; onPay: () => void; onUnpay: () => void }) {
   const income = item.direction === 'income';
-  const meta = [item.categoryName ?? 'Bez kategorii', item.accountName, item.kind === 'recurring' ? 'cykliczna' : 'jednorazowa'].filter(Boolean).join(' · ');
+  const meta = [item.categoryName ?? 'Bez kategorii', item.accountName, item.userName, item.kind === 'recurring' ? 'cykliczna' : 'jednorazowa'].filter(Boolean).join(' · ');
   const content = (
     <>
       <span className={income ? `${styles.icon} ${styles.iconIncome}` : item.kind === 'recurring' ? `${styles.icon} ${styles.iconRecurring}` : styles.icon}>

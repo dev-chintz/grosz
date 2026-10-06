@@ -8,6 +8,7 @@ const fuel: TransactionInput = {
   description: 'Paliwo',
   categoryId: null,
   accountId: null,
+  userId: null,
   note: null,
 };
 

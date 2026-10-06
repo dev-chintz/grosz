@@ -18,6 +18,12 @@ export interface HouseholdInput {
 
 export type HouseholdInputErrors = Partial<Record<keyof HouseholdInput, string>>;
 
+export interface MemberInput {
+  name: string;
+}
+
+export type MemberInputErrors = Partial<Record<keyof MemberInput, string>>;
+
 const MAX_BALANCE = 100_000_000_00;
 
 /** Prawdziwa data kalendarzowa (odrzuca np. 2026-02-31). */
@@ -41,6 +47,14 @@ export function validateAccountInput(input: AccountInput, existingNames: readonl
   }
   if (!isCalendarDate(input.openingDate)) errors.openingDate = 'Podaj datę salda.';
   return errors;
+}
+
+export function validateMemberInput(input: MemberInput, existingNames: readonly string[] = []): MemberInputErrors {
+  const name = input.name.trim();
+  if (!name) return { name: 'Podaj imię lub nazwę osoby.' };
+  if (name.length > 60) return { name: 'Nazwa może mieć najwyżej 60 znaków.' };
+  if (existingNames.some((n) => sameName(n, name))) return { name: 'Taka osoba już jest na liście.' };
+  return {};
 }
 
 export function validateHouseholdInput(input: HouseholdInput): HouseholdInputErrors {

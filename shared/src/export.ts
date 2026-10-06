@@ -13,6 +13,8 @@ export interface BackupFile {
   exportedAt: string;
   household: { name: string; currency: string };
   accounts: unknown[];
+  /** Domownicy; `userId` w operacjach i regułach wskazuje na nich. */
+  users: unknown[];
   categories: unknown[];
   recurringRules: unknown[];
   amountVersions: unknown[];
@@ -49,7 +51,7 @@ export function toCsv(rows: readonly (readonly string[])[]): string {
 
 const STATUS_LABELS: Record<LedgerStatus, string> = { done: 'zrealizowana', planned: 'zaplanowana', overdue: 'po terminie' };
 
-export const LEDGER_CSV_HEADER = ['Data', 'Rodzaj', 'Nazwa', 'Kategoria', 'Konto', 'Kierunek', 'Kwota', 'Kwota zaplanowana', 'Status', 'Notatka'] as const;
+export const LEDGER_CSV_HEADER = ['Data', 'Rodzaj', 'Nazwa', 'Kategoria', 'Konto', 'Osoba', 'Kierunek', 'Kwota', 'Kwota zaplanowana', 'Status', 'Notatka'] as const;
 
 /**
  * Operacje do CSV od najstarszej. Kwota ze znakiem (wpływ +, wydatek −), żeby suma kolumny dawała bilans.
@@ -63,6 +65,7 @@ export function ledgerToCsv(items: readonly LedgerItem[]): string {
     csvText(item.name),
     csvText(item.categoryName),
     csvText(item.accountName),
+    csvText(item.userName),
     item.direction === 'income' ? 'wpływ' : 'wydatek',
     csvAmount(item.direction === 'income' ? item.amount : -item.amount),
     item.plannedAmount === null ? '' : csvAmount(item.direction === 'income' ? item.plannedAmount : -item.plannedAmount),

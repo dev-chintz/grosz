@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AccountDto, SettingsResponse } from '@grosz/shared/api';
+import type { AccountDto, MemberDto, SettingsResponse } from '@grosz/shared/api';
 import { today as todayIso } from '@grosz/shared/dates';
 import { formatPLN, formatShortDate, parsePLN, plural } from '@grosz/shared/format';
-import { validateAccountInput, validateHouseholdInput, type AccountInputErrors } from '@grosz/shared/settings';
-import { api, ApiError, HOUSEHOLD_CHANGED } from '../api.ts';
+import { validateAccountInput, validateHouseholdInput, validateMemberInput, type AccountInputErrors } from '@grosz/shared/settings';
+import { api, ApiError, HOUSEHOLD_CHANGED, type HouseholdChange } from '../api.ts';
 import { Field, inputClass } from '../components/controls.tsx';
 import { Icon } from '../components/Icon.tsx';
 import styles from './Settings.module.css';
 
+/** Daje znać sidebarowi, że zmieniła się nazwa gospodarstwa lub liczba osób. */
+const announce = (change: HouseholdChange) => window.dispatchEvent(new CustomEvent(HOUSEHOLD_CHANGED, { detail: change }));
 const amountText = (grosze: number) => formatPLN(grosze).replace(/\s*zł$/, '');
 const dateWithYear = (date: string) => `${formatShortDate(date)} ${date.slice(0, 4)}`;
 
@@ -44,6 +46,7 @@ export function Settings() {
       {data && (
         <div className={styles.columns}>
           <HouseholdCard household={data.household} onSaved={reload} />
+          <MembersCard members={data.members} onChanged={reload} onError={setError} />
           <AccountsCard accounts={data.accounts} onChanged={reload} onError={setError} />
           <DataCard />
         </div>
@@ -64,7 +67,7 @@ function HouseholdCard({ household, onSaved }: { household: SettingsResponse['ho
     setBusy(true);
     try {
       await api.updateHousehold({ name });
-      window.dispatchEvent(new CustomEvent(HOUSEHOLD_CHANGED, { detail: name.trim() }));
+      announce({ name: name.trim() });
       setSaved(true);
       onSaved();
     } catch (e) {
@@ -316,5 +319,147 @@ function DataCard() {
 
       <p className={styles.muted}>Pliki zawierają wszystkie dane finansowe gospodarstwa — przechowuj je w bezpiecznym miejscu.</p>
     </section>
+  );
+}
+
+function MembersCard({ members, onChanged, onError }: { members: MemberDto[]; onChanged: () => void; onError: (message: string | null) => void }) {
+  const [editing, setEditing] = useState<string | 'new' | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const names = members.map((m) => m.name);
+
+  const remove = async (member: MemberDto) => {
+    try {
+      onError(null);
+      await api.deleteMember(member.id);
+      setDeleting(null);
+      announce({ memberCount: members.length - 1 });
+      onChanged();
+    } catch (e) {
+      onError((e as Error).message);
+    }
+  };
+
+  const added = () => {
+    setEditing(null);
+    announce({ memberCount: members.length + 1 });
+    onChanged();
+  };
+
+  return (
+    <section aria-labelledby="members-title" className={styles.card}>
+      <div className={styles.cardHead}>
+        <h2 id="members-title" className={styles.cardTitle}>
+          Domownicy
+        </h2>
+        <span className={styles.muted}>
+          Do osoby można przypisać operację lub płatność (pole „Kto”). Aplikacja nie ma logowania, więc lista nie ogranicza nikomu dostępu.
+        </span>
+      </div>
+
+      <ul className={styles.list}>
+        {members.map((m) => {
+          const used = m.transactionsCount + m.rulesCount;
+          return editing === m.id ? (
+            <li key={m.id}>
+              <MemberForm initial={m} existingNames={names.filter((n) => n !== m.name)} onCancel={() => setEditing(null)} onSaved={() => (setEditing(null), onChanged())} />
+            </li>
+          ) : (
+            <li key={m.id} className={styles.row}>
+              <div className={styles.rowMain}>
+                <strong>{m.name}</strong>
+                <span className={styles.meta}>
+                  {[
+                    m.transactionsCount > 0 && `${m.transactionsCount} ${plural(m.transactionsCount, ['operacja', 'operacje', 'operacji'])}`,
+                    m.rulesCount > 0 && `${m.rulesCount} ${plural(m.rulesCount, ['płatność cykliczna', 'płatności cykliczne', 'płatności cyklicznych'])}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'bez przypisanych operacji'}
+                </span>
+              </div>
+              {deleting === m.id ? (
+                <div className={styles.confirm} role="group" aria-label={`Usuwanie: ${m.name}`}>
+                  <span>{used > 0 ? `Przypisane operacje i płatności (${used}) staną się wspólne.` : 'Usunąć osobę z listy?'}</span>
+                  <button type="button" className={styles.dangerButton} onClick={() => remove(m)}>
+                    Usuń
+                  </button>
+                  <button type="button" className={styles.ghostButton} onClick={() => setDeleting(null)}>
+                    Anuluj
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.rowActions}>
+                  <button type="button" className={styles.iconButton} aria-label={`Edytuj: ${m.name}`} onClick={() => setEditing(m.id)}>
+                    <Icon name="pencil" size={16} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.ghostButton}
+                    aria-label={`Usuń: ${m.name}`}
+                    disabled={members.length <= 1}
+                    title={members.length <= 1 ? 'Musi zostać co najmniej jedna osoba.' : undefined}
+                    onClick={() => setDeleting(m.id)}
+                  >
+                    Usuń
+                  </button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {editing === 'new' ? (
+        <MemberForm initial={null} existingNames={names} onCancel={() => setEditing(null)} onSaved={added} />
+      ) : (
+        <button type="button" className={styles.addButton} onClick={() => setEditing('new')}>
+          <Icon name="plus" size={16} strokeWidth={2.2} />
+          Dodaj osobę
+        </button>
+      )}
+    </section>
+  );
+}
+
+function MemberForm({ initial, existingNames, onCancel, onSaved }: { initial: MemberDto | null; existingNames: string[]; onCancel: () => void; onSaved: () => void }) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [errors, setErrors] = useState<{ name?: string }>({});
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    const clientErrors = validateMemberInput({ name }, existingNames);
+    if (Object.keys(clientErrors).length) return setErrors(clientErrors);
+    setBusy(true);
+    try {
+      if (initial) await api.updateMember(initial.id, { name });
+      else await api.createMember({ name });
+      onSaved();
+    } catch (e) {
+      setErrors((e as ApiError).fieldErrors ?? { name: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit();
+      }}
+      onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+    >
+      <Field label="Imię lub nazwa" error={errors.name}>
+        <input className={inputClass} autoFocus value={name} aria-invalid={!!errors.name} onChange={(e) => (setName(e.target.value), setErrors({}))} />
+      </Field>
+      <div className={styles.buttons}>
+        <button type="button" className={styles.ghostButton} onClick={onCancel}>
+          Anuluj
+        </button>
+        <button type="submit" className={styles.saveButton} disabled={busy}>
+          {initial ? 'Zapisz' : 'Dodaj'}
+        </button>
+      </div>
+    </form>
   );
 }

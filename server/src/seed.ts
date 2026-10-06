@@ -5,7 +5,7 @@ import { and, eq, lte } from 'drizzle-orm';
 import { today } from '@grosz/shared/dates';
 import { parsePLN } from '@grosz/shared/format';
 import { connect } from './db/client.ts';
-import { accounts, categories, households, occurrences, recurringRules, ruleAmountVersions, transactions } from './db/schema.ts';
+import { accounts, categories, households, occurrences, recurringRules, ruleAmountVersions, transactions, users } from './db/schema.ts';
 import { currentHouseholdId } from './domain/household.ts';
 import { ensureOccurrences } from './domain/rules.ts';
 
@@ -35,6 +35,7 @@ async function seed() {
   const trackFrom = '2026-10-01';
   const [household] = await db.insert(households).values({ name: 'Budżet osobisty' }).returning();
   const householdId = household!.id;
+  await db.insert(users).values({ householdId, name: 'Ja' });
 
   const [account] = await db
     .insert(accounts)

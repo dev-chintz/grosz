@@ -16,6 +16,8 @@ const item = (patch: Partial<LedgerItem>): LedgerItem => ({
   categoryName: 'Jedzenie',
   accountId: null,
   accountName: 'Konto',
+  userId: null,
+  userName: null,
   note: null,
   status: 'done',
   ...patch,
@@ -63,9 +65,9 @@ describe('ledgerToCsv', () => {
       item({ date: '2026-10-02', name: 'Kawa', amount: 1_250 }),
     ]);
     const lines = csv.replace('\uFEFF', '').trimEnd().split('\r\n');
-    expect(lines[0]).toBe('Data;Rodzaj;Nazwa;Kategoria;Konto;Kierunek;Kwota;Kwota zaplanowana;Status;Notatka');
-    expect(lines[1]).toBe('2026-10-02;jednorazowa;Kawa;Jedzenie;Konto;wydatek;-12,50;;zrealizowana;');
-    expect(lines[2]).toBe('2026-10-09;cykliczna;Pensja;Wypłata;Konto;wpływ;8000,00;;zrealizowana;');
+    expect(lines[0]).toBe('Data;Rodzaj;Nazwa;Kategoria;Konto;Osoba;Kierunek;Kwota;Kwota zaplanowana;Status;Notatka');
+    expect(lines[1]).toBe('2026-10-02;jednorazowa;Kawa;Jedzenie;Konto;;wydatek;-12,50;;zrealizowana;');
+    expect(lines[2]).toBe('2026-10-09;cykliczna;Pensja;Wypłata;Konto;;wpływ;8000,00;;zrealizowana;');
   });
 
   it('pokazuje kwotę zaplanowaną tylko wtedy, gdy rachunek wyszedł inny, oraz statusy po polsku', () => {
@@ -78,6 +80,13 @@ describe('ledgerToCsv', () => {
     expect(csv).toContain(`'=HYPERLINK`);
     expect(csv).toContain(";'-cmd");
     expect(csv).not.toMatch(/;=HYPERLINK/);
+  });
+
+  it('kolumna „Osoba” pokazuje domownika, a dla operacji wspólnej jest pusta', () => {
+    const csv = ledgerToCsv([item({ name: 'Zakupy dla Ani', userId: 'u1', userName: 'Anna' }), item({ name: 'Wspólne', date: '2026-10-06' })]);
+    const lines = csv.replace('\uFEFF', '').trimEnd().split('\r\n');
+    expect(lines[1]!.split(';')[5]).toBe('Anna');
+    expect(lines[2]!.split(';')[5]).toBe('');
   });
 
   it('pusta lista to sam nagłówek', () => {

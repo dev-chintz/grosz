@@ -5,8 +5,9 @@ import { describeFrequency } from '@grosz/shared/labels';
 import { amountAt } from '@grosz/shared/recurrence';
 import { monthlyEquivalent, summarizeSchedule, toRecurrenceRule, validateRuleInput, type RuleInput, type RuleInputErrors } from '@grosz/shared/recurring';
 import type { Db } from '../db/client.ts';
-import { accounts, categories, occurrences, recurringRules, ruleAmountVersions } from '../db/schema.ts';
+import { accounts, categories, occurrences, recurringRules, ruleAmountVersions, users } from '../db/schema.ts';
 import { ensureOccurrences } from './rules.ts';
+import { memberExists } from './settings.ts';
 
 type RuleRow = typeof recurringRules.$inferSelect;
 
@@ -39,6 +40,7 @@ function toInput(row: RuleRow, amount: number): RuleInput {
     direction: row.direction,
     categoryId: row.categoryId,
     accountId: row.accountId,
+    userId: row.userId,
     payee: row.payee,
     amount,
     variableAmount: row.variableAmount,
@@ -65,6 +67,7 @@ function toColumns(input: RuleInput) {
     direction: input.direction,
     categoryId: input.categoryId,
     accountId: input.accountId,
+    userId: input.userId,
     payee: input.payee?.trim() || null,
     variableAmount: input.variableAmount,
     unit: input.unit,
@@ -85,6 +88,11 @@ function toColumns(input: RuleInput) {
 function validate(input: RuleInput) {
   const errors = validateRuleInput(input);
   if (Object.keys(errors).length) throw new ValidationError(errors);
+}
+
+/** Osoba z formularza musi należeć do tego gospodarstwa. */
+async function validateMember(db: Db, householdId: string, input: RuleInput) {
+  if (input.userId && !(await memberExists(db, householdId, input.userId))) throw new ValidationError({ userId: 'Nie ma takiej osoby.' });
 }
 
 export async function listRules(db: Db, householdId: string, today: IsoDate): Promise<RecurringListResponse> {
@@ -135,7 +143,7 @@ export async function listRules(db: Db, householdId: string, today: IsoDate): Pr
 }
 
 export async function listOptions(db: Db, householdId: string): Promise<OptionsResponse> {
-  const [categoryRows, accountRows] = await Promise.all([
+  const [categoryRows, accountRows, memberRows] = await Promise.all([
     db
       .select({ id: categories.id, name: categories.name, direction: categories.direction })
       .from(categories)
@@ -146,8 +154,9 @@ export async function listOptions(db: Db, householdId: string): Promise<OptionsR
       .from(accounts)
       .where(and(eq(accounts.householdId, householdId), eq(accounts.archived, false)))
       .orderBy(asc(accounts.name)),
+    db.select({ id: users.id, name: users.name }).from(users).where(eq(users.householdId, householdId)).orderBy(asc(users.name)),
   ]);
-  return { categories: categoryRows, accounts: accountRows };
+  return { categories: categoryRows, accounts: accountRows, members: memberRows };
 }
 
 async function findRule(db: Db, householdId: string, id: string): Promise<RuleRow> {
@@ -161,6 +170,7 @@ async function findRule(db: Db, householdId: string, id: string): Promise<RuleRo
 
 export async function createRule(db: Db, householdId: string, input: RuleInput, today: IsoDate): Promise<string> {
   validate(input);
+  await validateMember(db, householdId, input);
   const id = await db.transaction(async (tx) => {
     const [rule] = await tx
       .insert(recurringRules)
@@ -186,6 +196,7 @@ export async function createRule(db: Db, householdId: string, input: RuleInput, 
 export async function updateRule(db: Db, householdId: string, id: string, request: SaveRuleRequest, today: IsoDate): Promise<void> {
   const { applyFrom = today, ...input } = request;
   validate(input);
+  await validateMember(db, householdId, input);
   await findRule(db, householdId, id);
 
   await db.transaction(async (tx) => {

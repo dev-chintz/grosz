@@ -10,6 +10,8 @@ export interface TransactionInput {
   description: string;
   categoryId: string | null;
   accountId: string | null;
+  /** Domownik, którego dotyczy operacja; null = wspólna. */
+  userId: string | null;
   note: string | null;
 }
 

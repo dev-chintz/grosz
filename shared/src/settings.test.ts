@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCalendarDate, validateAccountInput, validateHouseholdInput } from './settings.ts';
+import { isCalendarDate, validateAccountInput, validateHouseholdInput, validateMemberInput } from './settings.ts';
 
 const valid = { name: 'Konto główne', openingBalance: 234_050, openingDate: '2026-01-01' };
 
@@ -51,5 +51,18 @@ describe('validateHouseholdInput', () => {
     expect(validateHouseholdInput({ name: 'Dom' })).toEqual({});
     expect(validateHouseholdInput({ name: ' ' }).name).toBeDefined();
     expect(validateHouseholdInput({ name: 'x'.repeat(61) }).name).toBeDefined();
+  });
+});
+
+describe('validateMemberInput', () => {
+  it('wymaga niepustej nazwy do 60 znaków', () => {
+    expect(validateMemberInput({ name: 'Anna' })).toEqual({});
+    expect(validateMemberInput({ name: '  ' }).name).toBeDefined();
+    expect(validateMemberInput({ name: 'x'.repeat(61) }).name).toBeDefined();
+  });
+
+  it('odrzuca duplikat bez względu na wielkość liter i polskie znaki', () => {
+    expect(validateMemberInput({ name: 'ŁUKASZ' }, ['Łukasz']).name).toBeDefined();
+    expect(validateMemberInput({ name: 'Ola' }, ['Łukasz']).name).toBeUndefined();
   });
 });

@@ -369,3 +369,23 @@
     display: none;
   }
 }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.userFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.userFilter select {
+  width: auto;
+  min-width: 160px;
+}

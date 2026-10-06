@@ -1,7 +1,13 @@
-import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
+import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SaveMemberRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
 
 /** Zdarzenie okna: zmieniono nazwę gospodarstwa (detail = nowa nazwa). Odświeża kartę w sidebarze. */
 export const HOUSEHOLD_CHANGED = 'grosz:household-changed';
+
+/** Szczegóły zdarzenia HOUSEHOLD_CHANGED: tylko pola, które się zmieniły. */
+export interface HouseholdChange {
+  name?: string;
+  memberCount?: number;
+}
 
 export class ApiError extends Error {
   readonly status: number;
@@ -40,7 +46,8 @@ export const api = {
   resumeRule: (id: string) => post<{ ok: boolean }>(`/api/recurring/${id}/resume`),
   deleteRule: (id: string) => request<{ ok: boolean }>(`/api/recurring/${id}`, { method: 'DELETE' }),
 
-  transactions: (params: { month?: string; q?: string }) => {
+  /** user: id osoby albo „none” (operacje wspólne); brak = wszyscy. */
+  transactions: (params: { month?: string; q?: string; user?: string }) => {
     const search = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1]));
     return request<TransactionsResponse>(`/api/transactions?${search}`);
   },
@@ -57,6 +64,9 @@ export const api = {
   updateAccount: (id: string, data: SaveAccountRequest) => request<{ ok: boolean }>(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   archiveAccount: (id: string) => post<{ ok: boolean }>(`/api/accounts/${id}/archive`),
   restoreAccount: (id: string) => post<{ ok: boolean }>(`/api/accounts/${id}/restore`),
+  createMember: (data: SaveMemberRequest) => post<{ id: string }>('/api/members', data),
+  updateMember: (id: string, data: SaveMemberRequest) => request<{ ok: boolean }>(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteMember: (id: string) => request<{ ok: boolean }>(`/api/members/${id}`, { method: 'DELETE' }),
 
   categories: (month: string) => request<CategoriesResponse>(`/api/categories?month=${month}`),
   createCategory: (data: SaveCategoryRequest) => post<{ id: string }>('/api/categories', data),

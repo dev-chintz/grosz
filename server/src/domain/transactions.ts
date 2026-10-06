@@ -1,10 +1,11 @@
-import { and, desc, eq, gte, ilike, lte, ne, or, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, isNull, lte, ne, or, type SQL } from 'drizzle-orm';
 import type { LedgerItem, LedgerStatus, TransactionsResponse } from '@grosz/shared/api';
 import { daysInMonth, toIso, type IsoDate } from '@grosz/shared/dates';
 import { validateTransactionInput, type TransactionInput, type TransactionInputErrors } from '@grosz/shared/transactions';
 import type { Db } from '../db/client.ts';
-import { accounts, categories, occurrences, recurringRules, transactions } from '../db/schema.ts';
+import { accounts, categories, occurrences, recurringRules, transactions, users } from '../db/schema.ts';
 import { ensureHorizon } from './month.ts';
+import { memberExists } from './settings.ts';
 
 /** Tyle wyników zwraca wyszukiwanie w całej historii. */
 const SEARCH_LIMIT = 200;
@@ -28,13 +29,13 @@ class TransactionNotFoundError extends Error {
 /** Znaki specjalne LIKE traktujemy dosłownie — „50%” ma szukać „50%”, a nie wszystkiego. */
 const likePattern = (query: string) => `%${query.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
 
-type OccurrenceRow = { occurrence: typeof occurrences.$inferSelect; rule: typeof recurringRules.$inferSelect; categoryName: string | null; accountName: string | null };
-type TransactionRow = { tx: typeof transactions.$inferSelect; categoryName: string | null; accountName: string | null };
+type OccurrenceRow = { occurrence: typeof occurrences.$inferSelect; rule: typeof recurringRules.$inferSelect; categoryName: string | null; accountName: string | null; userName: string | null };
+type TransactionRow = { tx: typeof transactions.$inferSelect; categoryName: string | null; accountName: string | null; userName: string | null };
 
 /** Łączy terminy cykliczne i operacje jednorazowe w jedną listę (od najnowszych) ze statusami względem `today`. */
 export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRows: TransactionRow[], today: IsoDate): LedgerItem[] {
   return [
-    ...transactionRows.map(({ tx, categoryName, accountName }): LedgerItem => ({
+    ...transactionRows.map(({ tx, categoryName, accountName, userName }): LedgerItem => ({
       kind: 'oneoff',
       id: tx.id,
       ruleId: null,
@@ -48,10 +49,12 @@ export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRow
       categoryName,
       accountId: tx.accountId,
       accountName,
+      userId: tx.userId,
+      userName,
       note: tx.note,
       status: tx.date <= today ? 'done' : 'planned',
     })),
-    ...occurrenceRows.map(({ occurrence, rule, categoryName, accountName }): LedgerItem => {
+    ...occurrenceRows.map(({ occurrence, rule, categoryName, accountName, userName }): LedgerItem => {
       const status: LedgerStatus = occurrence.status === 'paid' ? 'done' : occurrence.dueDate < today ? 'overdue' : 'planned';
       const actual = occurrence.actualAmount;
       return {
@@ -68,6 +71,8 @@ export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRow
         categoryName,
         accountId: rule.accountId,
         accountName,
+        userId: rule.userId,
+        userName,
         note: null,
         status,
       };
@@ -78,7 +83,7 @@ export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRow
 export async function listLedger(
   db: Db,
   householdId: string,
-  params: { month: string | null; query: string | null },
+  params: { month: string | null; query: string | null; /** id osoby albo 'none' (wspólne); null = wszyscy */ user: string | null },
   today: IsoDate,
 ): Promise<TransactionsResponse> {
   const query = params.query?.trim() || null;
@@ -97,6 +102,13 @@ export async function listLedger(
     occurrenceFilters.push(gte(occurrences.dueDate, range.from), lte(occurrences.dueDate, range.to));
     transactionFilters.push(gte(transactions.date, range.from), lte(transactions.date, range.to));
   }
+  if (params.user === 'none') {
+    occurrenceFilters.push(isNull(recurringRules.userId));
+    transactionFilters.push(isNull(transactions.userId));
+  } else if (params.user) {
+    occurrenceFilters.push(eq(recurringRules.userId, params.user));
+    transactionFilters.push(eq(transactions.userId, params.user));
+  }
   if (query) {
     const pattern = likePattern(query);
     occurrenceFilters.push(or(ilike(recurringRules.name, pattern), ilike(categories.name, pattern))!);
@@ -106,19 +118,21 @@ export async function listLedger(
 
   const [occurrenceRows, transactionRows] = await Promise.all([
     db
-      .select({ occurrence: occurrences, rule: recurringRules, categoryName: categories.name, accountName: accounts.name })
+      .select({ occurrence: occurrences, rule: recurringRules, categoryName: categories.name, accountName: accounts.name, userName: users.name })
       .from(occurrences)
       .innerJoin(recurringRules, eq(occurrences.ruleId, recurringRules.id))
       .leftJoin(categories, eq(recurringRules.categoryId, categories.id))
       .leftJoin(accounts, eq(recurringRules.accountId, accounts.id))
+      .leftJoin(users, eq(recurringRules.userId, users.id))
       .where(and(...occurrenceFilters))
       .orderBy(desc(occurrences.dueDate))
       .limit(limit),
     db
-      .select({ tx: transactions, categoryName: categories.name, accountName: accounts.name })
+      .select({ tx: transactions, categoryName: categories.name, accountName: accounts.name, userName: users.name })
       .from(transactions)
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(users, eq(transactions.userId, users.id))
       .where(and(...transactionFilters))
       .orderBy(desc(transactions.date), desc(transactions.createdAt))
       .limit(limit),
@@ -141,6 +155,7 @@ function columns(input: TransactionInput) {
     description: input.description.trim(),
     categoryId: input.categoryId,
     accountId: input.accountId,
+    userId: input.userId,
     note: input.note?.trim() || null,
   };
 }
@@ -150,8 +165,14 @@ function validate(input: TransactionInput) {
   if (Object.keys(errors).length) throw new TransactionValidationError(errors);
 }
 
+/** Osoba z formularza musi należeć do tego gospodarstwa. */
+async function validateMember(db: Db, householdId: string, input: TransactionInput) {
+  if (input.userId && !(await memberExists(db, householdId, input.userId))) throw new TransactionValidationError({ userId: 'Nie ma takiej osoby.' });
+}
+
 export async function createTransaction(db: Db, householdId: string, input: TransactionInput): Promise<string> {
   validate(input);
+  await validateMember(db, householdId, input);
   const [row] = await db
     .insert(transactions)
     .values({ ...columns(input), householdId })
@@ -161,6 +182,7 @@ export async function createTransaction(db: Db, householdId: string, input: Tran
 
 export async function updateTransaction(db: Db, householdId: string, id: string, input: TransactionInput): Promise<void> {
   validate(input);
+  await validateMember(db, householdId, input);
   const updated = await db
     .update(transactions)
     .set(columns(input))

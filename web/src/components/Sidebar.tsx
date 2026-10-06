@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
-import { api, HOUSEHOLD_CHANGED } from '../api.ts';
+import { plural } from '@grosz/shared/format';
+import { api, HOUSEHOLD_CHANGED, type HouseholdChange } from '../api.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import styles from './Sidebar.module.css';
 
@@ -23,16 +24,16 @@ const initials = (name: string) =>
     .join('');
 
 export function Sidebar() {
-  const [household, setHousehold] = useState<{ name: string; currency: string } | null>(null);
+  const [household, setHousehold] = useState<{ name: string; currency: string; memberCount: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     api.settings().then(
-      (result) => !cancelled && setHousehold(result.household),
+      (result) => !cancelled && setHousehold({ ...result.household, memberCount: result.members.length }),
       () => undefined, // karta gospodarstwa jest tylko ozdobą — brak danych nie blokuje nawigacji
     );
-    // Ustawienia ogłaszają zmianę nazwy, żeby karta w sidebarze nie czekała na przeładowanie strony.
-    const onChanged = (event: Event) => setHousehold((h) => (h ? { ...h, name: (event as CustomEvent<string>).detail } : h));
+    // Ustawienia ogłaszają zmianę nazwy lub liczby osób, żeby karta w sidebarze nie czekała na przeładowanie strony.
+    const onChanged = (event: Event) => setHousehold((h) => (h ? { ...h, ...(event as CustomEvent<HouseholdChange>).detail } : h));
     window.addEventListener(HOUSEHOLD_CHANGED, onChanged);
     return () => {
       cancelled = true;
@@ -64,7 +65,9 @@ export function Sidebar() {
           <span className={styles.avatar}>{household ? initials(household.name) : ''}</span>
           <span className={styles.householdText}>
             <strong>{household?.name ?? '…'}</strong>
-            <span>1 osoba · {household?.currency ?? 'PLN'}</span>
+            <span>
+              {household ? `${household.memberCount} ${plural(household.memberCount, ['osoba', 'osoby', 'osób'])}` : ''} · {household?.currency ?? 'PLN'}
+            </span>
           </span>
         </div>
       </div>

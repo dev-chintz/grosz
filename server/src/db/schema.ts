@@ -26,13 +26,18 @@ export const households = pgTable('households', {
   createdAt: createdAt(),
 });
 
-export const users = pgTable('users', {
-  id: id(),
-  householdId: householdId(),
-  name: text('name').notNull(),
-  email: text('email').unique(),
-  createdAt: createdAt(),
-});
+/** Domownicy. Na razie bez logowania — to lista osób, do których można przypisać operacje. */
+export const users = pgTable(
+  'users',
+  {
+    id: id(),
+    householdId: householdId(),
+    name: text('name').notNull(),
+    email: text('email').unique(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('users_household_idx').on(t.householdId)],
+);
 
 export const accounts = pgTable(
   'accounts',
@@ -74,6 +79,8 @@ export const recurringRules = pgTable(
     direction: direction('direction').notNull().default('expense'),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    /** Kto wydał / otrzymał; null = wspólne. Usunięcie domownika zostawia operacje jako wspólne. */
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
     payee: text('payee'),
     unit: recurrenceUnit('unit').notNull(),
     interval: smallint('interval').notNull().default(1),
@@ -148,6 +155,8 @@ export const transactions = pgTable(
     id: id(),
     householdId: householdId(),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    /** Kto wydał / otrzymał; null = wspólne. Usunięcie domownika zostawia operacje jako wspólne. */
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
     direction: direction('direction').notNull().default('expense'),
     date: date('date').notNull(),

@@ -4,7 +4,7 @@ import { addDays, type IsoDate } from '@grosz/shared/dates';
 import { formatPLN, parsePLN } from '@grosz/shared/format';
 import { validateTransactionInput, type TransactionInput, type TransactionInputErrors } from '@grosz/shared/transactions';
 import { api, ApiError } from '../api.ts';
-import { Field, inputClass, Segmented } from './controls.tsx';
+import { Field, inputClass, MemberField, Segmented } from './controls.tsx';
 import styles from './TransactionDialog.module.css';
 
 type Form = Omit<TransactionInput, 'amount'> & { amountText: string };
@@ -16,6 +16,7 @@ const emptyForm = (options: OptionsResponse, date: IsoDate): Form => ({
   description: '',
   categoryId: null,
   accountId: options.accounts[0]?.id ?? null,
+  userId: null,
   note: null,
 });
 
@@ -26,6 +27,7 @@ const fromItem = (item: LedgerItem): Form => ({
   description: item.name,
   categoryId: item.categoryId,
   accountId: item.accountId,
+  userId: item.userId,
   note: item.note,
 });
 
@@ -205,6 +207,7 @@ export function TransactionDialog({
                 ))}
               </select>
             </Field>
+            <MemberField members={options.members} value={form.userId} onChange={(userId) => set('userId', userId)} />
           </div>
 
           <Field label="Notatka" hint="opcjonalnie" error={errors.note}>

@@ -18,6 +18,7 @@ const transactionBody = {
     description: { type: 'string' },
     categoryId: nullable({ type: 'string', format: 'uuid' }),
     accountId: nullable({ type: 'string', format: 'uuid' }),
+    userId: nullable({ type: 'string', format: 'uuid' }),
     note: nullable({ type: 'string' }),
   },
 } as const;
@@ -26,21 +27,27 @@ const withDefaults = (body: SaveTransactionRequest): SaveTransactionRequest => (
   ...body,
   categoryId: body.categoryId ?? null,
   accountId: body.accountId ?? null,
+  userId: body.userId ?? null,
   note: body.note ?? null,
 });
 
 export function registerTransactionRoutes(app: FastifyInstance, db: Db, requireHousehold: () => Promise<string>) {
-  app.get<{ Querystring: { month?: string; q?: string } }>(
+  app.get<{ Querystring: { month?: string; q?: string; user?: string } }>(
     '/api/transactions',
     {
       schema: {
         querystring: {
           type: 'object',
-          properties: { month: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])$' }, q: { type: 'string', maxLength: 100 } },
+          properties: {
+            month: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])$' },
+            q: { type: 'string', maxLength: 100 },
+            // id osoby albo „none” (operacje wspólne); brak = wszyscy
+            user: { anyOf: [{ type: 'string', format: 'uuid' }, { const: 'none' }] },
+          },
         },
       },
     },
-    async (request) => listLedger(db, await requireHousehold(), { month: request.query.month ?? null, query: request.query.q ?? null }, today()),
+    async (request) => listLedger(db, await requireHousehold(), { month: request.query.month ?? null, query: request.query.q ?? null, user: request.query.user ?? null }, today()),
   );
 
   app.post<{ Body: SaveTransactionRequest }>('/api/transactions', { schema: { body: transactionBody } }, async (request, reply) => {

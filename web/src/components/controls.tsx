@@ -55,3 +55,23 @@ export function Field({ label, error, children, hint }: { label: string; error?:
 }
 
 export const inputClass = styles.input;
+
+/**
+ * Wybór osoby („Kto”) w formularzach. Przy jednym domowniku pole nic nie wnosi, więc się nie pokazuje;
+ * puste = wspólne.
+ */
+export function MemberField({ members, value, onChange }: { members: readonly { id: string; name: string }[]; value: string | null; onChange: (userId: string | null) => void }) {
+  if (members.length < 2) return null;
+  return (
+    <Field label="Kto" hint="opcjonalnie">
+      <select className={inputClass} value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
+        <option value="">Wspólne</option>
+        {members.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}

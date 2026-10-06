@@ -6,6 +6,7 @@ const mortgage: RuleInput = {
   direction: 'expense',
   categoryId: null,
   accountId: null,
+  userId: null,
   payee: null,
   amount: 234_000,
   variableAmount: false,

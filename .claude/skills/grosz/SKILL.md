@@ -55,7 +55,7 @@ Edycja reguły domyślnie dotyczy terminów od najbliższego nieopłaconego; op�
 
 **Dzień płatności 29–31** w krótszym miesiącu przypada na ostatni dzień tego miesiąca. „Ostatni dzień miesiąca” to osobna opcja, nie dzień 31.
 
-**Wielu użytkowników:** każda tabela z danymi budżetu ma `household_id`, a każde zapytanie filtruje po nim — nawet teraz, gdy jest jedno gospodarstwo. Dodanie domowników później nie będzie wtedy wymagało przepisywania zapytań.
+**Wielu użytkowników:** każda tabela z danymi budżetu ma `household_id`, a każde zapytanie filtruje po nim — nawet teraz, gdy jest jedno gospodarstwo. Dodanie domowników później nie będzie wtedy wymagało przepisywania zapytań. Domownicy to tabela `users` (na razie bez logowania): operacje jednorazowe i reguły cykliczne mają opcjonalne `user_id` (null = wspólne; usunięcie osoby zostawia je jako wspólne). Każde gospodarstwo ma co najmniej jednego domownika (migracja 0003 dodaje „Ja” istniejącym bazom, seed też), a `userId` z żądania zawsze sprawdzamy przez `memberExists`, żeby nie dało się przypisać osoby z innego gospodarstwa.
 
 **„Zostaje do wydania”** = wpływy miesiąca − wszystkie zaplanowane i opłacone wydatki miesiąca (stałe i jednorazowe). „Dziennie” = ta kwota / liczba dni do końca miesiąca włącznie z dzisiejszym.
 
