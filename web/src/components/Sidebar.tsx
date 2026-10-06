@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
+import { api, HOUSEHOLD_CHANGED } from '../api.ts';
 import { Icon, type IconName } from './Icon.tsx';
 import styles from './Sidebar.module.css';
 
@@ -12,7 +14,32 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/ustawienia', label: 'Ustawienia', icon: 'settings' },
 ];
 
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toLocaleUpperCase('pl'))
+    .join('');
+
 export function Sidebar() {
+  const [household, setHousehold] = useState<{ name: string; currency: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.settings().then(
+      (result) => !cancelled && setHousehold(result.household),
+      () => undefined, // karta gospodarstwa jest tylko ozdobą — brak danych nie blokuje nawigacji
+    );
+    // Ustawienia ogłaszają zmianę nazwy, żeby karta w sidebarze nie czekała na przeładowanie strony.
+    const onChanged = (event: Event) => setHousehold((h) => (h ? { ...h, name: (event as CustomEvent<string>).detail } : h));
+    window.addEventListener(HOUSEHOLD_CHANGED, onChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(HOUSEHOLD_CHANGED, onChanged);
+    };
+  }, []);
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
@@ -34,10 +61,10 @@ export function Sidebar() {
 
       <div className={styles.household}>
         <div className={styles.householdRow}>
-          <span className={styles.avatar}>JA</span>
+          <span className={styles.avatar}>{household ? initials(household.name) : ''}</span>
           <span className={styles.householdText}>
-            <strong>Budżet osobisty</strong>
-            <span>1 osoba · PLN</span>
+            <strong>{household?.name ?? '…'}</strong>
+            <span>1 osoba · {household?.currency ?? 'PLN'}</span>
           </span>
         </div>
       </div>

@@ -1,4 +1,7 @@
-import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
+import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
+
+/** Zdarzenie okna: zmieniono nazwę gospodarstwa (detail = nowa nazwa). Odświeża kartę w sidebarze. */
+export const HOUSEHOLD_CHANGED = 'grosz:household-changed';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -47,6 +50,13 @@ export const api = {
   deleteTransaction: (id: string) => request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'DELETE' }),
 
   reports: (months: 3 | 6 | 12) => request<ReportsResponse>(`/api/reports?months=${months}`),
+
+  settings: () => request<SettingsResponse>('/api/settings'),
+  updateHousehold: (data: SaveHouseholdRequest) => request<{ ok: boolean }>('/api/settings/household', { method: 'PUT', body: JSON.stringify(data) }),
+  createAccount: (data: SaveAccountRequest) => post<{ id: string }>('/api/accounts', data),
+  updateAccount: (id: string, data: SaveAccountRequest) => request<{ ok: boolean }>(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  archiveAccount: (id: string) => post<{ ok: boolean }>(`/api/accounts/${id}/archive`),
+  restoreAccount: (id: string) => post<{ ok: boolean }>(`/api/accounts/${id}/restore`),
 
   categories: (month: string) => request<CategoriesResponse>(`/api/categories?month=${month}`),
   createCategory: (data: SaveCategoryRequest) => post<{ id: string }>('/api/categories', data),

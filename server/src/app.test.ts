@@ -2,7 +2,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import type { CategoriesResponse, RecurringListResponse, ReportsResponse } from '@grosz/shared/api';
+import type { CategoriesResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse } from '@grosz/shared/api';
 import { buildApp } from './app.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
 import { accounts, households } from './db/schema.ts';
@@ -141,5 +141,68 @@ describe('raporty', () => {
     expect(ok.months.at(-1)!.month).toBe(ok.endMonth);
     expect((await app.inject({ url: '/api/reports?months=4' })).statusCode).toBe(400);
     expect((await app.inject({ url: '/api/reports?month=2031-13' })).statusCode).toBe(400);
+  });
+});
+
+describe('ustawienia', () => {
+  const account = (payload: object) => app.inject({ method: 'POST', url: '/api/accounts', payload });
+  const settings = async () => json<SettingsResponse>(await app.inject({ url: '/api/settings' }));
+
+  it('zwraca gospodarstwo i konta, a nazwę gospodarstwa można zmienić', async () => {
+    const before = await settings();
+    expect(before.household).toMatchObject({ name: 'Test', currency: 'PLN' });
+    expect(before.accounts.find((a) => a.name === 'Konto')).toMatchObject({ archived: false, openingBalance: 0, openingDate: '2026-01-01' });
+
+    expect((await app.inject({ method: 'PUT', url: '/api/settings/household', payload: { name: '  Dom  ' } })).statusCode).toBe(200);
+    expect((await settings()).household.name).toBe('Dom');
+
+    const empty = await app.inject({ method: 'PUT', url: '/api/settings/household', payload: { name: ' ' } });
+    expect(empty.statusCode).toBe(400);
+    expect(json<{ errors: { name: string } }>(empty).errors.name).toBeDefined();
+  });
+
+  it('konto: saldo ujemne zostaje ujemne, edycja się zapisuje, duplikat i zła data dają błędy per pole', async () => {
+    const created = await account({ name: 'Karta', openingBalance: -150_000, openingDate: '2026-03-15' });
+    expect(created.statusCode).toBe(201);
+    const id = json<{ id: string }>(created).id;
+    expect((await settings()).accounts.find((a) => a.id === id)).toMatchObject({ name: 'Karta', openingBalance: -150_000, openingDate: '2026-03-15' });
+
+    const duplicate = await account({ name: 'KARTA', openingBalance: 0, openingDate: '2026-03-15' });
+    expect(duplicate.statusCode).toBe(400);
+    expect(json<{ errors: { name: string } }>(duplicate).errors.name).toBeDefined();
+
+    const badDate = await account({ name: 'Inna', openingBalance: 0, openingDate: '2026-02-30' });
+    expect(badDate.statusCode).toBe(400);
+    expect(json<{ errors: { openingDate: string } }>(badDate).errors.openingDate).toBeDefined();
+
+    const update = await app.inject({ method: 'PUT', url: `/api/accounts/${id}`, payload: { name: 'Karta kredytowa', openingBalance: 0, openingDate: '2026-04-01' } });
+    expect(update.statusCode).toBe(200);
+    expect((await settings()).accounts.find((a) => a.id === id)).toMatchObject({ name: 'Karta kredytowa', openingBalance: 0, openingDate: '2026-04-01' });
+  });
+
+  it('saldo jako tekst nie przechodzi', async () => {
+    expect((await account({ name: 'Tekst', openingBalance: '100', openingDate: '2026-01-01' })).statusCode).toBe(400);
+  });
+
+  it('archiwizacja ukrywa konto w formularzach, a ostatniego aktywnego konta nie da się zarchiwizować', async () => {
+    const all = (await settings()).accounts;
+    const main = all.find((a) => a.name === 'Konto')!;
+    const other = all.find((a) => a.name === 'Karta kredytowa')!;
+
+    expect((await app.inject({ method: 'POST', url: `/api/accounts/${other.id}/archive` })).statusCode).toBe(200);
+    expect((await settings()).accounts.find((a) => a.id === other.id)?.archived).toBe(true);
+    expect(json<OptionsResponse>(await app.inject({ url: '/api/options' })).accounts.map((a) => a.id)).not.toContain(other.id);
+
+    const last = await app.inject({ method: 'POST', url: `/api/accounts/${main.id}/archive` });
+    expect(last.statusCode).toBe(400);
+    expect(json<{ error: string }>(last).error).toContain('co najmniej jedno');
+
+    expect((await app.inject({ method: 'POST', url: `/api/accounts/${other.id}/restore` })).statusCode).toBe(200);
+    expect(json<OptionsResponse>(await app.inject({ url: '/api/options' })).accounts.map((a) => a.id)).toContain(other.id);
+  });
+
+  it('nieistniejące konto to 404', async () => {
+    const res = await app.inject({ method: 'POST', url: '/api/accounts/00000000-0000-4000-8000-000000000000/archive' });
+    expect(res.statusCode).toBe(404);
   });
 });

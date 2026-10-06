@@ -14,6 +14,7 @@ import { Categories } from './pages/Categories.tsx';
 import { ComingSoon } from './pages/ComingSoon.tsx';
 import { Recurring } from './pages/Recurring.tsx';
 import { Reports } from './pages/Reports.tsx';
+import { Settings } from './pages/Settings.tsx';
 import { Transactions } from './pages/Transactions.tsx';
 
 createRoot(document.getElementById('root')!).render(
@@ -28,7 +29,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="kalendarz" element={<Calendar />} />
           <Route path="kategorie" element={<Categories />} />
           <Route path="raporty" element={<Reports />} />
-          <Route path="ustawienia" element={<ComingSoon title="Ustawienia" />} />
+          <Route path="ustawienia" element={<Settings />} />
           <Route path="*" element={<ComingSoon title="Nie ma takiej strony" />} />
         </Route>
       </Routes>

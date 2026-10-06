@@ -5,6 +5,7 @@ import type { RuleInput, ScheduleSummary } from './recurring.ts';
 import type { TransactionInput } from './transactions.ts';
 import type { CategoryInput, LimitState } from './categories.ts';
 import type { ReportCategory, ReportMonth, ReportTotals } from './reports.ts';
+import type { AccountInput, HouseholdInput } from './settings.ts';
 
 export type Direction = 'expense' | 'income';
 export type EventKind = 'recurring' | 'oneoff';
@@ -221,3 +222,23 @@ export interface ReportsResponse {
   /** Okres obejmuje miesiące, w których są jeszcze nieopłacone (zaplanowane) płatności. */
   includesPlanned: boolean;
 }
+
+export interface AccountDto {
+  id: string;
+  name: string;
+  openingBalance: number;
+  openingDate: IsoDate;
+  archived: boolean;
+  /** Ile płatności cyklicznych i operacji jednorazowych jest przypisanych do konta. */
+  rulesCount: number;
+  transactionsCount: number;
+}
+
+export interface SettingsResponse {
+  household: { name: string; currency: string };
+  /** Aktywne najpierw, potem zarchiwizowane; w grupach alfabetycznie. */
+  accounts: AccountDto[];
+}
+
+export type SaveAccountRequest = AccountInput;
+export type SaveHouseholdRequest = HouseholdInput;
