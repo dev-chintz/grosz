@@ -4,6 +4,7 @@ import type { IsoDate } from './dates.ts';
 import type { RuleInput, ScheduleSummary } from './recurring.ts';
 import type { TransactionInput } from './transactions.ts';
 import type { CategoryInput, LimitState } from './categories.ts';
+import type { ReportCategory, ReportMonth, ReportTotals } from './reports.ts';
 
 export type Direction = 'expense' | 'income';
 export type EventKind = 'recurring' | 'oneoff';
@@ -207,3 +208,16 @@ export interface CategoriesResponse {
 }
 
 export type SaveCategoryRequest = CategoryInput;
+
+export interface ReportsResponse {
+  /** Ostatni miesiąc okresu (YYYY-MM). */
+  endMonth: string;
+  today: IsoDate;
+  /** Od najstarszego; ostatni to `endMonth`. */
+  months: ReportMonth[];
+  /** Wydatki okresu wg kategorii, od największej. */
+  categories: ReportCategory[];
+  totals: ReportTotals;
+  /** Okres obejmuje miesiące, w których są jeszcze nieopłacone (zaplanowane) płatności. */
+  includesPlanned: boolean;
+}

@@ -1,4 +1,4 @@
-import type { CalendarResponse, CategoriesResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
+import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -45,6 +45,8 @@ export const api = {
   updateTransaction: (id: string, data: SaveTransactionRequest) =>
     request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTransaction: (id: string) => request<{ ok: boolean }>(`/api/transactions/${id}`, { method: 'DELETE' }),
+
+  reports: (months: 3 | 6 | 12) => request<ReportsResponse>(`/api/reports?months=${months}`),
 
   categories: (month: string) => request<CategoriesResponse>(`/api/categories?month=${month}`),
   createCategory: (data: SaveCategoryRequest) => post<{ id: string }>('/api/categories', data),

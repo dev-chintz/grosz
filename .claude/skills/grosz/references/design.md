@@ -140,6 +140,7 @@ Ikony: liniowe SVG 18–20 px, `stroke-width` 1.8–2, `stroke="currentColor"`, 
 ## 6. Wykresy
 
 - **Oś miesiąca:** 31 słupków salda prognozowanego. Za nami `--ink`, przyszłość `#D9D4CA`, dni z wpływem `--accent`. Pod słupkiem kropki: pomarańczowa (płatność), limonkowa (wpływ); numer dnia mono 11 px, dziś w pigułce `--ink`. Kliknięcie dnia pokazuje panel: data, saldo na koniec dnia, chipy operacji.
+- **Miesiąc po miesiącu (Raporty):** na miesiąc para słupków 200 px wysokości — wpływy `--accent` z obwódką `--ink`, obok wydatki jako stos (stałe `--expense` na dole, jednorazowe `--expense-soft` na górze). Nad parą bilans miesiąca w Geist Mono, pod nią skrót miesiąca (rok tylko od stycznia lub przy 12 miesiącach). Skala wspólna dla wszystkich miesięcy, kontener `overflow-x: auto` z `min-width`.
 - **Kategorie:** poziome paski 8 px w `--expense` na `--track`, długość względem największej kategorii, obok kwota i procent.
 - Biblioteka do wykresów tylko gdy prosty HTML/CSS nie wystarczy. Kolory zawsze z tokenów.
 
