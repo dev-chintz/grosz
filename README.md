@@ -29,3 +29,5 @@ Lokalnie baza to PGlite (folder `.data/`) — nie trzeba instalować Postgresa a
 ## Wdrożenie
 
 Docker na QNAP, PostgreSQL w osobnym kontenerze, aplikacja na porcie 8090 — szczegóły w [`.claude/skills/grosz/references/deploy-qnap.md`](.claude/skills/grosz/references/deploy-qnap.md).
+
+Kontynuacja pracy na innym komputerze (stan, kroki wdrożenia na NAS, zasady pracy): [`docs/HANDOFF.md`](docs/HANDOFF.md).
