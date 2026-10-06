@@ -1,4 +1,4 @@
-import type { DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest } from '@grosz/shared/api';
+import type { CalendarResponse, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest } from '@grosz/shared/api';
 import type { RuleInputErrors } from '@grosz/shared/recurring';
 
 export class ApiError extends Error {
@@ -25,6 +25,7 @@ const post = <T>(path: string, data?: unknown) => request<T>(path, { method: 'PO
 
 export const api = {
   dashboard: (month: string) => request<DashboardResponse>(`/api/dashboard?month=${month}`),
+  calendar: (month: string) => request<CalendarResponse>(`/api/calendar?month=${month}`),
   pay: (occurrenceId: string) => post<{ ok: boolean }>(`/api/occurrences/${occurrenceId}/pay`),
   unpay: (occurrenceId: string) => post<{ ok: boolean }>(`/api/occurrences/${occurrenceId}/unpay`),
 

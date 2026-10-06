@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateWithWeekday, formatPLN, formatRelativeDays, parsePLN, plural, splitPLN } from './format.ts';
+import { formatCompact, formatDateWithWeekday, formatPLN, formatRelativeDays, parsePLN, plural, splitPLN } from './format.ts';
 
 const nbsp = (s: string) => s.replace(/ /g, ' ');
 
@@ -13,6 +13,12 @@ describe('formatPLN', () => {
   it('dzieli kwotę do dużego wyświetlania', () => {
     expect(splitPLN(455_161)).toEqual({ sign: '', whole: nbsp('4 551'), fraction: ',61' });
     expect(splitPLN(-5)).toEqual({ sign: '−', whole: '0', fraction: ',05' });
+  });
+
+  it('skraca kwoty do komórek kalendarza', () => {
+    expect(formatCompact(-234_000)).toBe('−' + nbsp('2 340'));
+    expect(formatCompact(845_000, { sign: true })).toBe('+' + nbsp('8 450'));
+    expect(formatCompact(-2_399)).toBe('−23,99');
   });
 
   it('używa typograficznego minusa i opcjonalnego plusa', () => {

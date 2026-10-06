@@ -5,6 +5,7 @@ import Fastify from 'fastify';
 import { sql } from 'drizzle-orm';
 import { today } from '@grosz/shared/dates';
 import type { Connection } from './db/client.ts';
+import { buildCalendar } from './domain/calendar.ts';
 import { buildDashboard } from './domain/dashboard.ts';
 import { currentHouseholdId } from './domain/household.ts';
 import { ValidationError } from './domain/recurring.ts';
@@ -34,6 +35,15 @@ export function buildApp(connection: Connection) {
     async (request) => {
       const now = today();
       return buildDashboard(db, await requireHousehold(), request.query.month ?? now.slice(0, 7), now);
+    },
+  );
+
+  app.get<{ Querystring: { month?: string } }>(
+    '/api/calendar',
+    { schema: { querystring: { type: 'object', properties: { month: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])$' } } } } },
+    async (request) => {
+      const now = today();
+      return buildCalendar(db, await requireHousehold(), request.query.month ?? now.slice(0, 7), now);
     },
   );
 

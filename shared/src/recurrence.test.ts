@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBusinessDay, isPolishHoliday, weekday } from './dates.ts';
+import { isBusinessDay, isPolishHoliday, polishHolidayName, weekday } from './dates.ts';
 import { amountAt, lastOccurrence, occurrences, occurrencesBetween, validateRule, type RecurrenceRule } from './recurrence.ts';
 
 const take = (rule: RecurrenceRule, n: number) => {
@@ -34,6 +34,9 @@ describe('dni robocze', () => {
     expect(isPolishHoliday('2024-12-24')).toBe(false);
     expect(isPolishHoliday('2026-10-15')).toBe(false);
     expect(isBusinessDay('2026-10-15')).toBe(true);
+    expect(polishHolidayName('2026-11-01')).toBe('Wszystkich Świętych');
+    expect(polishHolidayName('2027-03-28')).toBe('Wielkanoc');
+    expect(polishHolidayName('2026-10-15')).toBeNull();
   });
 });
 

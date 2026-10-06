@@ -96,3 +96,45 @@ export interface SaveRuleRequest extends RuleInput {
   /** Od kiedy zmiana obowiązuje (domyślnie dziś). Opłaconych terminów nie zmieniamy. */
   applyFrom?: IsoDate;
 }
+
+export interface CalendarEvent extends DayEvent {
+  /** Termin cykliczny (można go opłacić z kalendarza); null dla operacji jednorazowych. */
+  occurrenceId: string | null;
+  /** Opłacony termin albo operacja jednorazowa, która już się odbyła. */
+  done: boolean;
+  variableAmount: boolean;
+  /** Pierwotna data, gdy termin przesunięto z weekendu lub święta. */
+  shiftedFrom: IsoDate | null;
+}
+
+export interface CalendarDay {
+  date: IsoDate;
+  /** false dla dni z sąsiednich miesięcy, dopełniających siatkę do pełnych tygodni. */
+  inMonth: boolean;
+  holiday: string | null;
+  events: CalendarEvent[];
+  /** Wpływy − wydatki dnia. */
+  net: number;
+  /** Suma wydatków dnia (do paska „obciążenie dnia”). */
+  outflow: number;
+  /** Saldo na koniec dnia; tylko dla dni oglądanego miesiąca. */
+  balance: number | null;
+}
+
+export interface CalendarResponse {
+  month: string; // YYYY-MM
+  today: IsoDate;
+  /** Pełne tygodnie od poniedziałku do niedzieli. */
+  days: CalendarDay[];
+  summary: {
+    fixedTotal: number;
+    fixedPaid: number;
+    fixedCount: number;
+    fixedPaidCount: number;
+    /** Nieopłacone stałe wydatki miesiąca. */
+    toPay: number;
+    income: number;
+    heaviestDay: { date: IsoDate; amount: number } | null;
+    endBalance: number;
+  };
+}

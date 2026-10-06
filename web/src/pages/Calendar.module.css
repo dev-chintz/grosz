@@ -1,0 +1,549 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.monthSwitch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  margin: 0 8px;
+  font-size: 36px;
+  letter-spacing: -0.03em;
+}
+
+.title span {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.iconButton,
+.ghostButton {
+  height: var(--control-h);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-input);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton {
+  width: var(--control-h);
+}
+
+.ghostButton {
+  padding: 0 18px;
+  font-weight: 500;
+}
+
+.iconButton:hover,
+.ghostButton:hover {
+  background: var(--surface-2);
+}
+
+.error {
+  margin: 0;
+  color: var(--expense-text);
+  font-weight: 500;
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ---------- siatka ---------- */
+.calendarCard {
+  flex: 999 1 640px;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 16px;
+}
+
+.scrollX {
+  overflow-x: auto;
+}
+
+.grid {
+  min-width: 700px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.head {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.weekendHead {
+  color: var(--expense-text);
+}
+
+.cell {
+  min-height: 132px;
+  min-width: 0;
+  padding: 10px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--divider);
+  color: var(--text);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cell:hover {
+  background: var(--surface-2);
+}
+
+.weekend {
+  background: #fbfaf7;
+}
+
+.outside {
+  background: transparent;
+}
+
+.outside .dayNumber,
+.outside .chip,
+.outside .net {
+  color: var(--oneoff);
+}
+
+.outside .chip i {
+  opacity: 0.5;
+}
+
+.selected,
+.selected:hover {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.cellTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.dayNumber {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.today {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.net {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.holiday {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--expense-text);
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.chip i {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipIncome {
+  background: var(--accent);
+}
+
+.chipDone {
+  color: var(--text-3);
+}
+
+.chipDone span {
+  text-decoration: line-through;
+}
+
+.chipIncome.chipDone {
+  color: var(--ink);
+  opacity: 0.6;
+}
+
+.more {
+  font-size: 11px;
+  color: var(--text-2);
+  padding-left: 7px;
+}
+
+.load {
+  margin-top: auto;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.load span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--expense);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 14px 10px 4px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend .legendIncome {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.legend .legendDone {
+  width: 18px;
+  height: 0;
+  border-radius: 0;
+  border-top: 1.5px solid var(--text-3);
+}
+
+.legend .legendLoad {
+  width: 22px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--expense);
+}
+
+/* ---------- panel dnia ---------- */
+.side {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dayPanel {
+  background: var(--ink);
+  color: var(--on-ink);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dayHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dayHead > span:first-child {
+  font-size: 13px;
+  color: var(--on-ink-2);
+}
+
+.dayHead h2 {
+  font-size: 30px;
+  letter-spacing: -0.03em;
+}
+
+.dayHoliday {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.dayEmpty,
+.dayError {
+  margin: 0;
+  font-size: 14px;
+  color: var(--on-ink-2);
+}
+
+.dayError {
+  color: #ffb4a0;
+}
+
+.dayEvents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dayEvents li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #24272c;
+}
+
+.dayEvents li > i {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.dayEventText {
+  flex: 1 1 140px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dayEventText strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dayEventText span {
+  font-size: 12px;
+  color: var(--on-ink-2);
+}
+
+.struck {
+  text-decoration: line-through;
+  color: var(--on-ink-nav);
+}
+
+.dayAmount {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.payButton,
+.undoButton {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.payButton {
+  border: 0;
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.undoButton {
+  border: 1px solid #3a3e45;
+  background: transparent;
+  color: var(--on-ink-nav);
+}
+
+.undoButton:hover {
+  background: #2e3137;
+}
+
+.payButton:disabled,
+.undoButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.dayBalance {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2e3137;
+}
+
+.dayBalance span {
+  font-size: 13px;
+  color: var(--on-ink-2);
+}
+
+.dayBalance strong {
+  font-size: 18px;
+  color: var(--accent);
+}
+
+/* ---------- podsumowanie ---------- */
+.summary {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.summaryTitle {
+  font-size: 19px;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.progressTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.progressNote {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats > div {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stats span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.stats strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.statLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.textLink {
+  min-height: var(--control-h);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.textLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 26px;
+  }
+}

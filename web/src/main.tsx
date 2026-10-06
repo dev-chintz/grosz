@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Layout } from './components/Layout.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
+import { Calendar } from './pages/Calendar.tsx';
 import { ComingSoon } from './pages/ComingSoon.tsx';
 import { Recurring } from './pages/Recurring.tsx';
 
@@ -21,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="transakcje" element={<ComingSoon title="Transakcje" />} />
           <Route path="cykliczne" element={<Recurring />} />
           <Route path="cykliczne/:id" element={<Recurring />} />
-          <Route path="kalendarz" element={<ComingSoon title="Kalendarz płatności" />} />
+          <Route path="kalendarz" element={<Calendar />} />
           <Route path="kategorie" element={<ComingSoon title="Kategorie" />} />
           <Route path="raporty" element={<ComingSoon title="Raporty" />} />
           <Route path="ustawienia" element={<ComingSoon title="Ustawienia" />} />

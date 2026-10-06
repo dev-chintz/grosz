@@ -30,6 +30,13 @@ export function splitPLN(grosze: number): { sign: string; whole: string; fractio
   };
 }
 
+/** Krótko, bez waluty i zbędnych groszy — do ciasnych miejsc (komórki kalendarza): "−2 340", "+8 450", "−23,99". */
+export function formatCompact(grosze: number, options: { sign?: boolean } = {}): string {
+  const { sign, whole, fraction } = splitPLN(grosze);
+  const prefix = sign || (options.sign && grosze > 0 ? '+' : '');
+  return prefix + whole + (fraction === ',00' ? '' : fraction);
+}
+
 /** "2 340,00", "2340", "-12,5 zł" → grosze; null, gdy nie da się odczytać. */
 export function parsePLN(input: string): number | null {
   const cleaned = input

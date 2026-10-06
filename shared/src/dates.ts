@@ -67,7 +67,24 @@ export function today(timeZone: string = APP_TIME_ZONE): IsoDate {
 
 // Polskie dni ustawowo wolne — w te dni bank nie realizuje przelewów,
 // więc reguła „przesuń na dzień roboczy” musi je omijać tak jak weekendy.
-const FIXED_HOLIDAYS = ['01-01', '01-06', '05-01', '05-03', '08-15', '11-01', '11-11', '12-25', '12-26'];
+const FIXED_HOLIDAYS: Record<string, string> = {
+  '01-01': 'Nowy Rok',
+  '01-06': 'Trzech Króli',
+  '05-01': 'Święto Pracy',
+  '05-03': 'Święto Konstytucji 3 Maja',
+  '08-15': 'Wniebowzięcie NMP',
+  '11-01': 'Wszystkich Świętych',
+  '11-11': 'Święto Niepodległości',
+  '12-25': 'Boże Narodzenie',
+  '12-26': 'Drugi dzień Bożego Narodzenia',
+};
+
+const EASTER_HOLIDAYS: [offset: number, name: string][] = [
+  [0, 'Wielkanoc'],
+  [1, 'Poniedziałek Wielkanocny'],
+  [49, 'Zielone Świątki'],
+  [60, 'Boże Ciało'],
+];
 
 function easterSunday(year: number): IsoDate {
   // Algorytm Meeusa/Jonesa/Butchera (kalendarz gregoriański).
@@ -88,15 +105,20 @@ function easterSunday(year: number): IsoDate {
   return toIso(year, month, day);
 }
 
-export function isPolishHoliday(date: IsoDate): boolean {
+/** Nazwa polskiego dnia ustawowo wolnego albo null. */
+export function polishHolidayName(date: IsoDate): string | null {
   const { year } = parseIso(date);
   const monthDay = date.slice(5);
-  if (FIXED_HOLIDAYS.includes(monthDay)) return true;
+  const fixed = FIXED_HOLIDAYS[monthDay];
+  if (fixed) return fixed;
   // Wigilia jest dniem wolnym od 2025 r.
-  if (monthDay === '12-24' && year >= 2025) return true;
+  if (monthDay === '12-24' && year >= 2025) return 'Wigilia';
   const easter = easterSunday(year);
-  // Niedziela i poniedziałek wielkanocny, Zielone Świątki (+49), Boże Ciało (+60).
-  return [0, 1, 49, 60].some((offset) => addDays(easter, offset) === date);
+  return EASTER_HOLIDAYS.find(([offset]) => addDays(easter, offset) === date)?.[1] ?? null;
+}
+
+export function isPolishHoliday(date: IsoDate): boolean {
+  return polishHolidayName(date) !== null;
 }
 
 export function isBusinessDay(date: IsoDate): boolean {

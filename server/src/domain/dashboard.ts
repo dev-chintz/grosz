@@ -1,46 +1,17 @@
-import { and, asc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
 import type { CategoryTotal, DashboardResponse, DayEvent, RecentItem, TimelineDay, UpcomingPayment } from '@grosz/shared/api';
-import { addDays, addMonths, daysBetween, daysInMonth, toIso, type IsoDate } from '@grosz/shared/dates';
+import { daysBetween, daysInMonth, toIso, type IsoDate } from '@grosz/shared/dates';
 import { formatRelativeDays } from '@grosz/shared/format';
 import { describeFrequency } from '@grosz/shared/labels';
 import type { Db } from '../db/client.ts';
-import { accounts, categories, occurrences, recurringRules, transactions } from '../db/schema.ts';
-import { ensureOccurrences, toRecurrence } from './rules.ts';
-
-/** Ile miesięcy do przodu trzymamy wygenerowane terminy. */
-const HORIZON_MONTHS = 3;
-
-const signed = (direction: 'expense' | 'income', amount: number) => (direction === 'income' ? amount : -amount);
+import { balanceBefore, ensureHorizon, loadRange, signed } from './month.ts';
+import { toRecurrence } from './rules.ts';
 
 export async function buildDashboard(db: Db, householdId: string, month: string, today: IsoDate): Promise<DashboardResponse> {
   const [year, monthNumber] = month.split('-').map(Number) as [number, number];
   const from = toIso(year, monthNumber, 1);
   const to = toIso(year, monthNumber, daysInMonth(year, monthNumber));
-  const horizon = addMonths(year, monthNumber, HORIZON_MONTHS);
-  await ensureOccurrences(db, householdId, toIso(horizon.year, horizon.month, daysInMonth(horizon.year, horizon.month)));
-
-  const monthOccurrences = await db
-    .select({ occurrence: occurrences, rule: recurringRules, category: categories.name })
-    .from(occurrences)
-    .innerJoin(recurringRules, eq(occurrences.ruleId, recurringRules.id))
-    .leftJoin(categories, eq(recurringRules.categoryId, categories.id))
-    .where(
-      and(
-        eq(occurrences.householdId, householdId),
-        ne(occurrences.status, 'skipped'),
-        gte(occurrences.dueDate, from),
-        lte(occurrences.dueDate, to),
-      ),
-    )
-    .orderBy(asc(occurrences.dueDate));
-
-  const monthTransactions = await db
-    .select({ tx: transactions, category: categories.name })
-    .from(transactions)
-    .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(and(eq(transactions.householdId, householdId), gte(transactions.date, from), lte(transactions.date, to)))
-    .orderBy(asc(transactions.date));
-
+  await ensureHorizon(db, householdId, year, monthNumber);
+  const { occurrences: monthOccurrences, transactions: monthTransactions } = await loadRange(db, householdId, from, to);
   const openingBalance = await balanceBefore(db, householdId, from);
 
   // Zdarzenia dnia po dniu.
@@ -160,41 +131,4 @@ export async function buildDashboard(db: Db, householdId: string, month: string,
     categories: categoryTotals,
     recent,
   };
-}
-
-/** Saldo na początek dnia `date`: salda otwarcia kont + wszystkie przepływy od otwarcia do dnia poprzedniego. */
-async function balanceBefore(db: Db, householdId: string, date: IsoDate): Promise<number> {
-  const [opening] = await db
-    .select({
-      total: sql<number>`coalesce(sum(${accounts.openingBalance}), 0)::int`,
-      since: sql<IsoDate | null>`min(${accounts.openingDate})::text`,
-    })
-    .from(accounts)
-    // Saldo otwarcia obowiązuje na początek `opening_date`, więc konto otwarte dokładnie w `date` też się liczy.
-    .where(and(eq(accounts.householdId, householdId), eq(accounts.archived, false), lte(accounts.openingDate, date)));
-  if (!opening?.since) return 0;
-
-  const [recurring] = await db
-    .select({
-      total: sql<number>`coalesce(sum(case when ${recurringRules.direction} = 'income' then 1 else -1 end * coalesce(${occurrences.actualAmount}, ${occurrences.plannedAmount})), 0)::int`,
-    })
-    .from(occurrences)
-    .innerJoin(recurringRules, eq(occurrences.ruleId, recurringRules.id))
-    .where(
-      and(
-        eq(occurrences.householdId, householdId),
-        ne(occurrences.status, 'skipped'),
-        gte(occurrences.dueDate, opening.since),
-        lt(occurrences.dueDate, date),
-      ),
-    );
-
-  const [oneOff] = await db
-    .select({
-      total: sql<number>`coalesce(sum(case when ${transactions.direction} = 'income' then 1 else -1 end * ${transactions.amount}), 0)::int`,
-    })
-    .from(transactions)
-    .where(and(eq(transactions.householdId, householdId), gte(transactions.date, opening.since), lt(transactions.date, date)));
-
-  return opening.total + (recurring?.total ?? 0) + (oneOff?.total ?? 0);
 }
