@@ -124,3 +124,37 @@ Claude nie ma kluczy SSH do NAS ani Dockera na komputerze z projektem, więc kom
 
 - **Import z kopii JSON** — odwrotność eksportu. Nadpisuje dane, więc zaczynaj od planu z bramkami i kopii bazy przed importem.
 - **Logowanie i prawdziwe konta domowników** — osobny projekt z bezpieczeństwem (hasła, sesje, zaproszenia). Dziś aplikacja nie ma logowania: każdy w sieci domowej lub w Tailscale ma dostęp.
+
+## 6. Pamięć Claude'a (pliki memory)
+
+Claude Code zapisuje notatki o projekcie w plikach memory. Są **lokalne dla komputera i folderu projektu** i **nie trafiają do gita**, więc w domu Claude ich nie zobaczy, dopóki ich nie przeniesiesz. Nic ważnego nie przepadnie: wszystko, co dotyczy `grosz`, jest w repo (ten plik, `README.md`, skille w `.claude/skills/`). Memory to tylko wygoda.
+
+**Gdzie leżą na komputerze w pracy:** `~/.claude/projects/C--Users-fmic--Documents-projekt-grosz/memory/`. Nazwa folderu to ścieżka projektu, w której każdy znak inny niż litera lub cyfra zamieniono na `-`. W domu ścieżka będzie inna, więc folder będzie się nazywał inaczej; Claude Code utworzy go sam przy pierwszym otwarciu projektu. Sprawdzisz go poleceniem:
+
+```powershell
+dir $HOME/.claude/projects
+```
+
+**Co zawierają pliki (stan z 2026-10-06):**
+
+| Plik | O czym jest |
+|---|---|
+| `MEMORY.md` | Indeks: po jednej linii na każdy plik. Wczytuje się na początku każdej sesji. |
+| `user-profile.md` | Piszesz po polsku (krótko, potocznie), kod i commity po angielsku; Windows 11; NAS QNAP przez Tailscale; lubisz, gdy Claude proponuje skille. |
+| `grosz-project.md` | Co jest gotowe i co zostaje (wdrożenie na NAS, import, logowanie), dane wdrożenia i pułapki narzędzi na Windows (patrz niżej). |
+| `plan-before-building.md` | Zasada: przy nowej funkcji najpierw krótki plan i akceptacja, przy zmianach wizualnych makiety do wyboru (opis też w sekcji 4 tego pliku). |
+| `ai-patterns-repo.md` | Wskaźnik na repo ze wzorcami agentów (Agent Graph, Jev-Powered App). Dotyczy projektów z agentami AI, nie `grosz`. |
+
+**Pułapki narzędzi Claude'a, które są tylko w memory** (warto je znać):
+- Narzędzie Bash może zjadać jeden z podwójnych ukośników w heredocu, więc wzorce regex w kodzie TypeScript lądują z jednym ukośnikiem. Składaj je z `chr(92)` w Pythonie albo edytuj plik narzędziem Edit.
+- Narzędzia Write i Edit zamieniają zapis ukośnik-u-FEFF na prawdziwy znak BOM w kodzie. Po zapisie sprawdź: `grep -rlP '\xEF\xBB\xBF' shared/src server/src web/src`.
+- Podgląd przeglądarki w aplikacji Claude szuka `.claude/launch.json` w folderze, w którym sesja się zaczęła. Serwer dev uruchamiaj komendą `npm run dev` i otwieraj `http://localhost:5173`. Po restarcie serwera użyj świeżej karty przeglądarki, bo stara trzyma stare moduły.
+
+**Jak przenieść memory do domu (opcjonalnie):**
+1. Nic nie rób. Claude w domu przeczyta ten plik i skille, a zasady pracy są w sekcji 4. To wystarczy.
+2. Skopiuj pięć plików z folderu z pracy do odpowiedniego folderu `memory/` w domu (po pierwszym otwarciu projektu w domu, gdy folder już istnieje). Pliki nie zawierają haseł, ale zawierają Twoje preferencje, nazwę konta GitHub i adres NAS, więc **nie wkładaj ich do publicznego repo** (to repo jest publiczne).
+3. Sklonuj repo ze wzorcami agentów obok projektu: `git clone https://github.com/dev-chintz/ai-patterns.git`.
+
+**Pamięć w chmurze konta (claude.ai)** z plikami `/areas/agent-architecture.md` i `/areas/jev-powered-app.md` jest przypisana do konta, a nie do komputera. Te same pliki są w repo `ai-patterns`.
+
+**Memory innych projektów** (Anvero, micro) leży w osobnych folderach i nie dotyczy `grosz`.
