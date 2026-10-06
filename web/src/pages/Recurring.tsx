@@ -7,6 +7,7 @@ import { api } from '../api.ts';
 import { Segmented } from '../components/controls.tsx';
 import { Icon } from '../components/Icon.tsx';
 import { RuleEditor } from './recurring/RuleEditor.tsx';
+import { AccountBadge } from '../components/AccountBadge.tsx';
 import styles from './Recurring.module.css';
 
 type Filter = 'all' | 'expense' | 'income' | 'paused' | 'ending';
@@ -124,6 +125,7 @@ export function Recurring() {
                 <span className={styles.rowMain}>
                   <span className={styles.rowTitle}>
                     <strong>{r.name}</strong>
+                    <AccountBadge accountName={r.accountName} accountBank={r.accountBank} />
                     {r.direction === 'income' && <span className={`${styles.badge} ${styles.badgeIncome}`}>wpływ</span>}
                     {r.variableAmount && <span className={styles.badge}>kwota zmienna</span>}
                     {r.status === 'paused' && <span className={styles.badge}>wstrzymane od {monthYear(r.pausedFrom ?? data!.today)}</span>}

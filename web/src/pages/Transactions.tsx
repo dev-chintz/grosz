@@ -266,7 +266,7 @@ function Row({ item, busy, onEdit, onPay, onUnpay }: { item: LedgerItem; busy: b
       <span className={styles.text}>
         <span className={styles.nameLine}>
           <strong>{item.name}</strong>
-          {item.accountBank && <AccountBadge accountName={item.accountName} accountBank={item.accountBank} />}
+          <AccountBadge accountName={item.accountName} accountBank={item.accountBank} />
           {item.status === 'overdue' && <span className={`${styles.badge} ${styles.badgeOverdue}`}>zaległe</span>}
           {item.status === 'planned' && <span className={styles.badge}>zaplanowane</span>}
           {item.variableAmount && item.status !== 'done' && <span className={styles.badge}>kwota zmienna</span>}

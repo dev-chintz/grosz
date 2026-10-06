@@ -6,6 +6,7 @@ import { formatCompact, formatLongDate, formatPLN, formatShortDate, MONTHS_NOMIN
 import { api } from '../api.ts';
 import { Icon } from '../components/Icon.tsx';
 import { usePayment } from '../components/usePayment.tsx';
+import { AccountBadge } from '../components/AccountBadge.tsx';
 import styles from './Calendar.module.css';
 
 const MAX_CHIPS = 3;
@@ -210,6 +211,7 @@ function DayPanel({ day, today, onChanged }: { day: CalendarDay; today: IsoDate;
             <i style={{ background: e.direction === 'income' ? 'var(--accent)' : dotColor(e) }} />
             <span className={styles.dayEventText}>
               <strong className={e.done ? styles.struck : undefined}>{e.name}</strong>
+              <AccountBadge accountName={e.accountName} accountBank={e.accountBank} />
               <span>
                 {e.kind === 'recurring' ? (e.direction === 'income' ? 'wpływ cykliczny' : 'cykliczny') : e.direction === 'income' ? 'wpływ' : 'jednorazowy'} · {status(e)}
                 {e.shiftedFrom && ` · przesunięte z ${formatShortDate(e.shiftedFrom)}`}

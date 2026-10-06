@@ -18,6 +18,7 @@ import { api } from '../api.ts';
 import { Icon } from '../components/Icon.tsx';
 import { TransactionDialog } from '../components/TransactionDialog.tsx';
 import { usePayment } from '../components/usePayment.tsx';
+import { AccountBadge } from '../components/AccountBadge.tsx';
 import styles from './Dashboard.module.css';
 
 const shiftMonth = (month: string, by: number) => {
@@ -423,7 +424,9 @@ function Recent({ data }: { data: DashboardResponse }) {
           <li key={i} className={styles.recent}>
             <span className={styles.recentDay}>{String(parseIso(r.date).day).padStart(2, '0')}</span>
             <span className={styles.paymentText}>
-              <strong>{r.name}</strong>
+              <strong>
+                {r.name} <AccountBadge accountName={r.accountName} accountBank={r.accountBank} />
+              </strong>
               <span>
                 {r.category} · {r.kind === 'recurring' ? 'cykliczny' : 'jednorazowy'}
               </span>
