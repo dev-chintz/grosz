@@ -90,23 +90,27 @@ export async function buildDashboard(db: Db, householdId: string, month: string,
   const recent: RecentItem[] = [
     ...monthTransactions
       .filter(({ tx }) => tx.date <= today)
-      .map(({ tx, category }) => ({
+      .map(({ tx, category, accountName, accountBank }) => ({
         date: tx.date,
         name: tx.description,
         category: category ?? 'Bez kategorii',
         kind: 'oneoff' as const,
         direction: tx.direction,
         amount: tx.amount,
+        accountName: accountName ?? null,
+        accountBank: accountBank ?? null,
       })),
     ...monthOccurrences
       .filter(({ occurrence }) => occurrence.status === 'paid')
-      .map(({ occurrence, rule, category }) => ({
+      .map(({ occurrence, rule, category, accountName, accountBank }) => ({
         date: occurrence.paidOn ?? occurrence.dueDate,
         name: rule.name,
         category: category ?? 'Bez kategorii',
         kind: 'recurring' as const,
         direction: rule.direction,
         amount: occurrence.actualAmount ?? occurrence.plannedAmount,
+        accountName: accountName ?? null,
+        accountBank: accountBank ?? null,
       })),
   ]
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))

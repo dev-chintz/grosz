@@ -8,6 +8,7 @@ import { inputClass, Segmented } from '../components/controls.tsx';
 import { Icon } from '../components/Icon.tsx';
 import { TransactionDialog } from '../components/TransactionDialog.tsx';
 import { usePayment } from '../components/usePayment.tsx';
+import { AccountBadge } from '../components/AccountBadge.tsx';
 import styles from './Transactions.module.css';
 
 type Filter = 'all' | 'oneoff' | 'recurring' | 'income' | 'due';
@@ -256,7 +257,7 @@ export function Transactions() {
 
 function Row({ item, busy, onEdit, onPay, onUnpay }: { item: LedgerItem; busy: boolean; onEdit: () => void; onPay: () => void; onUnpay: () => void }) {
   const income = item.direction === 'income';
-  const meta = [item.categoryName ?? 'Bez kategorii', item.accountName, item.userName, item.kind === 'recurring' ? 'cykliczna' : 'jednorazowa'].filter(Boolean).join(' · ');
+  const meta = [item.categoryName ?? 'Bez kategorii', item.userName, item.kind === 'recurring' ? 'cykliczna' : 'jednorazowa'].filter(Boolean).join(' · ');
   const content = (
     <>
       <span className={income ? `${styles.icon} ${styles.iconIncome}` : item.kind === 'recurring' ? `${styles.icon} ${styles.iconRecurring}` : styles.icon}>
@@ -265,6 +266,7 @@ function Row({ item, busy, onEdit, onPay, onUnpay }: { item: LedgerItem; busy: b
       <span className={styles.text}>
         <span className={styles.nameLine}>
           <strong>{item.name}</strong>
+          {item.accountBank && <AccountBadge accountName={item.accountName} accountBank={item.accountBank} />}
           {item.status === 'overdue' && <span className={`${styles.badge} ${styles.badgeOverdue}`}>zaległe</span>}
           {item.status === 'planned' && <span className={styles.badge}>zaplanowane</span>}
           {item.variableAmount && item.status !== 'done' && <span className={styles.badge}>kwota zmienna</span>}

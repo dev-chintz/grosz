@@ -25,10 +25,11 @@ export async function ensureHorizon(db: Db, householdId: string, year: number, m
 export async function loadRange(db: Db, householdId: string, from: IsoDate, to: IsoDate) {
   const [occurrenceRows, transactionRows] = await Promise.all([
     db
-      .select({ occurrence: occurrences, rule: recurringRules, category: categories.name })
+      .select({ occurrence: occurrences, rule: recurringRules, category: categories.name, accountName: accounts.name, accountBank: accounts.bank })
       .from(occurrences)
       .innerJoin(recurringRules, eq(occurrences.ruleId, recurringRules.id))
       .leftJoin(categories, eq(recurringRules.categoryId, categories.id))
+      .leftJoin(accounts, eq(recurringRules.accountId, accounts.id))
       .where(
         and(
           eq(occurrences.householdId, householdId),
@@ -39,9 +40,10 @@ export async function loadRange(db: Db, householdId: string, from: IsoDate, to: 
       )
       .orderBy(asc(occurrences.dueDate), asc(recurringRules.name)),
     db
-      .select({ tx: transactions, category: categories.name })
+      .select({ tx: transactions, category: categories.name, accountName: accounts.name, accountBank: accounts.bank })
       .from(transactions)
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(and(eq(transactions.householdId, householdId), gte(transactions.date, from), lte(transactions.date, to)))
       .orderBy(asc(transactions.date), asc(transactions.createdAt)),
   ]);

@@ -49,6 +49,8 @@ export interface RecentItem {
   kind: EventKind;
   direction: Direction;
   amount: number;
+  accountName: string | null;
+  accountBank: string | null;
 }
 
 export interface DashboardResponse {
