@@ -13,6 +13,7 @@ const accountBody = {
     name: { type: 'string' },
     openingBalance: { type: 'integer' },
     openingDate: { type: 'string' },
+    bank: { type: ['string', 'null'], maxLength: 40 },
   },
 } as const;
 

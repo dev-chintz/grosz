@@ -164,6 +164,18 @@ describe('ustawienia', () => {
     expect(json<{ errors: { name: string } }>(empty).errors.name).toBeDefined();
   });
 
+  it('konto: bank zapisuje się przy tworzeniu i edycji, a null go czyści', async () => {
+    const id = json<{ id: string }>(await account({ name: 'Bankowe', openingBalance: 0, openingDate: '2026-03-15', bank: 'alior' })).id;
+    expect((await settings()).accounts.find((a) => a.id === id)?.bank).toBe('alior');
+
+    const put = (bank: string | null) => app.inject({ method: 'PUT', url: `/api/accounts/${id}`, payload: { name: 'Bankowe', openingBalance: 0, openingDate: '2026-03-15', bank } });
+    expect((await put('pekao')).statusCode).toBe(200);
+    expect((await settings()).accounts.find((a) => a.id === id)?.bank).toBe('pekao');
+    expect((await put(null)).statusCode).toBe(200);
+    expect((await settings()).accounts.find((a) => a.id === id)?.bank).toBeNull();
+    await app.inject({ method: 'POST', url: `/api/accounts/${id}/archive` });
+  });
+
   it('konto: saldo ujemne zostaje ujemne, edycja się zapisuje, duplikat i zła data dają błędy per pole', async () => {
     const created = await account({ name: 'Karta', openingBalance: -150_000, openingDate: '2026-03-15' });
     expect(created.statusCode).toBe(201);
