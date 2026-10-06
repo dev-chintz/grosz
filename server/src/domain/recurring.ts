@@ -7,7 +7,7 @@ import { monthlyEquivalent, summarizeSchedule, toRecurrenceRule, validateRuleInp
 import type { Db } from '../db/client.ts';
 import { accounts, categories, occurrences, recurringRules, ruleAmountVersions, users } from '../db/schema.ts';
 import { ensureOccurrences, settleAutoBooked } from './rules.ts';
-import { memberExists } from './settings.ts';
+import { findForeignReferences } from './household.ts';
 
 type RuleRow = typeof recurringRules.$inferSelect;
 
@@ -90,9 +90,10 @@ function validate(input: RuleInput) {
   if (Object.keys(errors).length) throw new ValidationError(errors);
 }
 
-/** Osoba z formularza musi należeć do tego gospodarstwa. */
-async function validateMember(db: Db, householdId: string, input: RuleInput) {
-  if (input.userId && !(await memberExists(db, householdId, input.userId))) throw new ValidationError({ userId: 'Nie ma takiej osoby.' });
+/** Kategoria, konto i osoba z formularza muszą należeć do tego gospodarstwa. */
+async function validateReferences(db: Db, householdId: string, input: RuleInput) {
+  const errors = await findForeignReferences(db, householdId, input);
+  if (Object.keys(errors).length) throw new ValidationError(errors);
 }
 
 export async function listRules(db: Db, householdId: string, today: IsoDate): Promise<RecurringListResponse> {
@@ -171,7 +172,7 @@ async function findRule(db: Db, householdId: string, id: string): Promise<RuleRo
 
 export async function createRule(db: Db, householdId: string, input: RuleInput, today: IsoDate): Promise<string> {
   validate(input);
-  await validateMember(db, householdId, input);
+  await validateReferences(db, householdId, input);
   const id = await db.transaction(async (tx) => {
     const [rule] = await tx
       .insert(recurringRules)
@@ -197,7 +198,7 @@ export async function createRule(db: Db, householdId: string, input: RuleInput, 
 export async function updateRule(db: Db, householdId: string, id: string, request: SaveRuleRequest, today: IsoDate): Promise<void> {
   const { applyFrom = today, ...input } = request;
   validate(input);
-  await validateMember(db, householdId, input);
+  await validateReferences(db, householdId, input);
   await findRule(db, householdId, id);
 
   await db.transaction(async (tx) => {

@@ -5,7 +5,7 @@ import { validateTransactionInput, type TransactionInput, type TransactionInputE
 import type { Db } from '../db/client.ts';
 import { accounts, categories, occurrences, recurringRules, transactions, users } from '../db/schema.ts';
 import { ensureHorizon } from './month.ts';
-import { memberExists } from './settings.ts';
+import { findForeignReferences } from './household.ts';
 
 /** Tyle wyników zwraca wyszukiwanie w całej historii. */
 const SEARCH_LIMIT = 200;
@@ -165,14 +165,15 @@ function validate(input: TransactionInput) {
   if (Object.keys(errors).length) throw new TransactionValidationError(errors);
 }
 
-/** Osoba z formularza musi należeć do tego gospodarstwa. */
-async function validateMember(db: Db, householdId: string, input: TransactionInput) {
-  if (input.userId && !(await memberExists(db, householdId, input.userId))) throw new TransactionValidationError({ userId: 'Nie ma takiej osoby.' });
+/** Kategoria, konto i osoba z formularza muszą należeć do tego gospodarstwa. */
+async function validateReferences(db: Db, householdId: string, input: TransactionInput) {
+  const errors = await findForeignReferences(db, householdId, input);
+  if (Object.keys(errors).length) throw new TransactionValidationError(errors);
 }
 
 export async function createTransaction(db: Db, householdId: string, input: TransactionInput): Promise<string> {
   validate(input);
-  await validateMember(db, householdId, input);
+  await validateReferences(db, householdId, input);
   const [row] = await db
     .insert(transactions)
     .values({ ...columns(input), householdId })
@@ -182,7 +183,7 @@ export async function createTransaction(db: Db, householdId: string, input: Tran
 
 export async function updateTransaction(db: Db, householdId: string, id: string, input: TransactionInput): Promise<void> {
   validate(input);
-  await validateMember(db, householdId, input);
+  await validateReferences(db, householdId, input);
   const updated = await db
     .update(transactions)
     .set(columns(input))

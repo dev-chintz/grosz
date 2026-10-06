@@ -6,7 +6,7 @@ import type { CategoriesResponse, DashboardResponse, OptionsResponse, RecurringL
 import { addDays, today as todayIso } from '@grosz/shared/dates';
 import { buildApp } from './app.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
-import { accounts, households, transactions, users } from './db/schema.ts';
+import { accounts, categories, households, transactions, users } from './db/schema.ts';
 
 let connection: Connection;
 let app: ReturnType<typeof buildApp>;
@@ -420,5 +420,69 @@ describe('automatyczne księgowanie i przypomnienia', () => {
     expect(paid.statusCode).toBe(200);
     const after = json<DashboardResponse>(await app.inject({ url: `/api/dashboard?month=${monthOf(due)}` }));
     expect(after.upcoming.find((u) => u.name === 'Z przypomnieniem')).toMatchObject({ reminder: false, paid: true });
+  });
+});
+
+describe('odwołania do cudzych danych', () => {
+  const ruleBody = (extra: object) => ({
+    name: 'Reguła z obcym odwołaniem', direction: 'expense', categoryId: null, accountId: null, userId: null, payee: null, amount: 1_000, variableAmount: false,
+    unit: 'month', interval: 1, startDate: '2034-05-10', dayOfMonth: 10, lastDayOfMonth: false, weekendRule: 'none', endType: 'never',
+    endDate: null, endCount: null, remindDaysBefore: null, autoBook: false, note: null, ...extra,
+  });
+  const txBody = (extra: object) => ({ direction: 'expense', amount: 500, date: '2034-05-11', description: 'Operacja z obcym odwołaniem', categoryId: null, accountId: null, userId: null, note: null, ...extra });
+
+  let foreign: { categoryId: string; accountId: string };
+  let own: { categoryId: string; accountId: string };
+
+  beforeAll(async () => {
+    const [other] = await connection.db.insert(households).values({ name: 'Obcy dom' }).returning();
+    const [category] = await connection.db.insert(categories).values({ householdId: other!.id, name: 'Cudza kategoria' }).returning();
+    const [account] = await connection.db.insert(accounts).values({ householdId: other!.id, name: 'Cudze konto', openingDate: '2026-01-01' }).returning();
+    foreign = { categoryId: category!.id, accountId: account!.id };
+    const ownCategory = json<{ id: string }>(await app.inject({ method: 'POST', url: '/api/categories', payload: { name: 'Moja kategoria do testu odwołań', direction: 'expense' } }));
+    const ownAccount = (await app.inject({ url: '/api/options' })).body;
+    own = { categoryId: ownCategory.id, accountId: json<OptionsResponse>({ body: ownAccount }).accounts[0]!.id };
+  });
+
+  it('operacja: cudza lub nieistniejąca kategoria i konto to 400 z błędem przy polu, i nic się nie zapisuje', async () => {
+    const missing = '00000000-0000-4000-8000-000000000000';
+    for (const [field, value] of [['categoryId', foreign.categoryId], ['accountId', foreign.accountId], ['categoryId', missing], ['accountId', missing]] as const) {
+      const res = await app.inject({ method: 'POST', url: '/api/transactions', payload: txBody({ [field]: value }) });
+      expect(res.statusCode, `${field}=${value}`).toBe(400);
+      expect(json<{ errors: Record<string, string> }>(res).errors[field]).toBeDefined();
+    }
+    const ledger = json<TransactionsResponse>(await app.inject({ url: '/api/transactions?month=2034-05' }));
+    expect(ledger.items.map((i) => i.name)).not.toContain('Operacja z obcym odwołaniem');
+  });
+
+  it('edycja operacji nie pozwala podmienić odwołania na cudze', async () => {
+    const created = await app.inject({ method: 'POST', url: '/api/transactions', payload: txBody({ description: 'Własna operacja', categoryId: own.categoryId, accountId: own.accountId }) });
+    expect(created.statusCode).toBe(201);
+    const id = json<{ id: string }>(created).id;
+    const res = await app.inject({ method: 'PUT', url: `/api/transactions/${id}`, payload: txBody({ description: 'Własna operacja', categoryId: foreign.categoryId }) });
+    expect(res.statusCode).toBe(400);
+    const ledger = json<TransactionsResponse>(await app.inject({ url: '/api/transactions?month=2034-05' }));
+    expect(ledger.items.find((i) => i.name === 'Własna operacja')).toMatchObject({ categoryId: own.categoryId });
+  });
+
+  it('płatność cykliczna: cudza kategoria lub konto to 400 przy tworzeniu i edycji', async () => {
+    for (const [field, value] of [['categoryId', foreign.categoryId], ['accountId', foreign.accountId]] as const) {
+      const res = await app.inject({ method: 'POST', url: '/api/recurring', payload: ruleBody({ [field]: value }) });
+      expect(res.statusCode, field).toBe(400);
+      expect(json<{ errors: Record<string, string> }>(res).errors[field]).toBeDefined();
+    }
+    const created = await app.inject({ method: 'POST', url: '/api/recurring', payload: ruleBody({ name: 'Własna reguła', categoryId: own.categoryId, accountId: own.accountId }) });
+    expect(created.statusCode).toBe(201);
+    const id = json<{ id: string }>(created).id;
+    const edit = await app.inject({ method: 'PUT', url: `/api/recurring/${id}`, payload: ruleBody({ name: 'Własna reguła', accountId: foreign.accountId }) });
+    expect(edit.statusCode).toBe(400);
+    const rules = json<RecurringListResponse>(await app.inject({ url: '/api/recurring' })).rules;
+    expect(rules.find((r) => r.name === 'Własna reguła')).toMatchObject({ accountId: own.accountId });
+    expect(rules.map((r) => r.name)).not.toContain('Reguła z obcym odwołaniem');
+  });
+
+  it('własna kategoria, konto i brak odwołań nadal przechodzą', async () => {
+    expect((await app.inject({ method: 'POST', url: '/api/transactions', payload: txBody({ description: 'Poprawna własna', categoryId: own.categoryId, accountId: own.accountId }) })).statusCode).toBe(201);
+    expect((await app.inject({ method: 'POST', url: '/api/transactions', payload: txBody({ description: 'Poprawna bez odwołań' }) })).statusCode).toBe(201);
   });
 });

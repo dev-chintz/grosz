@@ -14,7 +14,7 @@ Wygląd, tokeny i komponenty opisuje `references/design.md` w skillu `grosz` —
    - Zmiana schematu bazy → najpierw skill `grosz-migration`.
 2. **Typy API:** kształty odpowiedzi i żądań w `shared/src/api.ts`. Pola „brak wartości” jako `null`, nie `0`.
 3. **Serwer**
-   - Logika zapytań w `server/src/domain/<temat>.ts`; **każde zapytanie filtruje po `household_id`**.
+   - Logika zapytań w `server/src/domain/<temat>.ts`; **każde zapytanie filtruje po `household_id`**, a każde id z żądania (kategoria, konto, osoba, …) sprawdzaj względem gospodarstwa — dla istniejących pól użyj `findForeignReferences` z `domain/household.ts`, dla nowych dopisz tam sprawdzenie i test z obcym id.
    - Trasy w `server/src/routes/<temat>.ts` (wzór: `routes/categories.ts`): schemat JSON na body/query/params, `additionalProperties: false`, nullable jako `anyOf: [integer, null]`.
    - Zarejestruj w `server/src/app.ts` obok `registerCategoryRoutes`. Własny błąd walidacji dopisz do obsługi błędów w tym samym pliku (jak `CategoryValidationError`), żeby klient dostał 400 z `errors` per pole.
    - Dozwolona tylko składnia „wymazywalna” TS (bez `enum`/`namespace`), importy względne z `.ts`, `import type` dla typów.

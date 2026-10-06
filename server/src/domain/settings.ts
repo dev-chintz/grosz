@@ -122,12 +122,6 @@ async function findMember(db: Db, householdId: string, id: string) {
   return row;
 }
 
-/** Czy `userId` to domownik tego gospodarstwa — żeby nie dało się przypisać operacji do cudzej osoby. */
-export async function memberExists(db: Db, householdId: string, userId: string): Promise<boolean> {
-  const [row] = await db.select({ id: users.id }).from(users).where(and(eq(users.id, userId), eq(users.householdId, householdId)));
-  return !!row;
-}
-
 export async function createMember(db: Db, householdId: string, input: MemberInput): Promise<string> {
   const errors = validateMemberInput(input, await otherMemberNames(db, householdId));
   if (Object.keys(errors).length) throw new SettingsValidationError(errors);
