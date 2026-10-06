@@ -40,7 +40,8 @@ main() {
   docker compose up -d app
 
   echo "== Sprawdzam, czy wstała"
-  for i in 1 2 3 4 5 6 7 8 9 10; do
+  # Pierwszy start na NAS trwa ponad 30 s — czekamy do 2 minut.
+  for i in $(seq 1 40); do
     if docker compose exec -T app wget -qO- http://localhost:3000/api/health; then
       echo
       echo "== Gotowe: http://192.168.1.9:8090 (w domu) · http://100.112.158.37:8090 (Tailscale)"
