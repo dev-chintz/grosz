@@ -79,6 +79,8 @@ export interface RecurringRuleDto extends RuleInput {
   status: 'active' | 'paused';
   pausedFrom: IsoDate | null;
   categoryName: string | null;
+  accountName: string | null;
+  accountBank: string | null;
   /** „co miesiąc, 15.” */
   frequencyLabel: string;
   /** Aktualna kwota przeliczona na miesiąc (do sum). */
@@ -114,6 +116,10 @@ export interface CalendarEvent extends DayEvent {
   variableAmount: boolean;
   /** Pierwotna data, gdy termin przesunięto z weekendu lub święta. */
   shiftedFrom: IsoDate | null;
+  /** Account name for this event. */
+  accountName: string | null;
+  /** Bank code for the account. */
+  accountBank: string | null;
 }
 
 export interface CalendarDay {

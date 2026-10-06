@@ -99,9 +99,10 @@ async function validateReferences(db: Db, householdId: string, input: RuleInput)
 export async function listRules(db: Db, householdId: string, today: IsoDate): Promise<RecurringListResponse> {
   await settleAutoBooked(db, householdId, today);
   const rows = await db
-    .select({ rule: recurringRules, categoryName: categories.name })
+    .select({ rule: recurringRules, categoryName: categories.name, accountName: accounts.name, accountBank: accounts.bank })
     .from(recurringRules)
     .leftJoin(categories, eq(recurringRules.categoryId, categories.id))
+    .leftJoin(accounts, eq(recurringRules.accountId, accounts.id))
     .where(eq(recurringRules.householdId, householdId))
     .orderBy(asc(recurringRules.name));
 
@@ -113,7 +114,7 @@ export async function listRules(db: Db, householdId: string, today: IsoDate): Pr
         .orderBy(desc(ruleAmountVersions.effectiveFrom))
     : [];
 
-  const rules: RecurringRuleDto[] = rows.map(({ rule, categoryName }) => {
+  const rules: RecurringRuleDto[] = rows.map(({ rule, categoryName, accountName, accountBank }) => {
     const history = versions.filter((v) => v.ruleId === rule.id).map((v) => ({ effectiveFrom: v.effectiveFrom, amount: v.amount }));
     // Kwota „aktualna”: obowiązująca dziś, a dla reguł z przyszłości — pierwsza zaplanowana.
     const amount = amountAt(history, today) ?? history.at(-1)?.amount ?? 0;
@@ -126,6 +127,8 @@ export async function listRules(db: Db, householdId: string, today: IsoDate): Pr
       status: rule.status,
       pausedFrom: rule.pausedFrom,
       categoryName,
+      accountName: accountName ?? null,
+      accountBank: accountBank ?? null,
       frequencyLabel: describeFrequency(recurrence),
       monthlyAmount: monthlyEquivalent(amount, rule.unit, rule.interval),
       amountHistory: history,

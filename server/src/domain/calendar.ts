@@ -16,7 +16,7 @@ export async function buildCalendar(db: Db, householdId: string, month: string, 
 
   const byDay = new Map<IsoDate, CalendarEvent[]>();
   const add = (date: IsoDate, event: CalendarEvent) => byDay.set(date, [...(byDay.get(date) ?? []), event]);
-  for (const { occurrence, rule } of range.occurrences) {
+  for (const { occurrence, rule, accountName, accountBank } of range.occurrences) {
     add(occurrence.dueDate, {
       name: rule.name,
       direction: rule.direction,
@@ -26,9 +26,11 @@ export async function buildCalendar(db: Db, householdId: string, month: string, 
       done: occurrence.status === 'paid',
       variableAmount: rule.variableAmount,
       shiftedFrom: occurrence.nominalDate !== occurrence.dueDate ? occurrence.nominalDate : null,
+      accountName: accountName ?? null,
+      accountBank: accountBank ?? null,
     });
   }
-  for (const { tx } of range.transactions) {
+  for (const { tx, accountName, accountBank } of range.transactions) {
     add(tx.date, {
       name: tx.description,
       direction: tx.direction,
@@ -38,6 +40,8 @@ export async function buildCalendar(db: Db, householdId: string, month: string, 
       done: tx.date <= today,
       variableAmount: false,
       shiftedFrom: null,
+      accountName: accountName ?? null,
+      accountBank: accountBank ?? null,
     });
   }
 
