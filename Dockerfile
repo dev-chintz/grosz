@@ -14,8 +14,7 @@ COPY web web
 RUN npm run build -w web
 
 FROM node:24-alpine
-ARG GIT_COMMIT=unknown
-ENV NODE_ENV=production PORT=3000 GIT_COMMIT=$GIT_COMMIT
+ENV NODE_ENV=production PORT=3000
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY shared/package.json shared/
@@ -26,6 +25,10 @@ COPY shared/src shared/src
 COPY server/src server/src
 COPY server/drizzle server/drizzle
 COPY --from=build /src/web/dist web/dist
+# Wersja na samym końcu: zmienia się przy każdym commicie, więc wyżej unieważniałaby pamięć podręczną
+# i każda aktualizacja pobierałaby od nowa wszystkie biblioteki z internetu.
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=$GIT_COMMIT
 USER node
 EXPOSE 3000
 CMD ["node", "server/src/index.ts"]
