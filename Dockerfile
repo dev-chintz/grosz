@@ -3,7 +3,8 @@
 
 FROM node:24-alpine AS build
 WORKDIR /src
-COPY package.json package-lock.json ./
+# tsconfig.base.json: web/tsconfig.json dziedziczy z niego, a Vite czyta tsconfig przy budowaniu.
+COPY package.json package-lock.json tsconfig.base.json ./
 COPY shared/package.json shared/
 COPY server/package.json server/
 COPY web/package.json web/
