@@ -10,7 +10,9 @@ Stan z 2026-10-06. Historia czatu i lokalna pamięć Claude'a **nie przenoszą s
 - 85 testów, `npm run typecheck` i `npm run build` przechodzą.
 - Przygotowane wdrożenie na NAS: `deploy/deploy.sh`, `compose.yaml`, `Dockerfile`, bootstrap pustego budżetu (`npm run db:bootstrap`).
 
-**Nie jest zrobione:** samo wdrożenie na NAS (poniżej), import z kopii, logowanie. Obrazu Dockera nie testowano na żadnym komputerze — pierwszy build na NAS to pierwszy prawdziwy test.
+**Wdrożone na NAS 2026-10-07:** http://192.168.1.9:8090 (w domu), http://100.112.158.37:8090 (Tailscale). Baza przez sieć Dockera `anvero-db_default`, dobowa kopia o 3:00 z crontaba QNAP (`/etc/config/crontab`, log w `backups/cron.log`; QTS nie ma harmonogramu w Panelu sterowania). Kolejne wydania: `sh deploy/deploy.sh` na NAS.
+
+**Nie jest zrobione:** import z kopii, logowanie.
 
 ## 1. Uruchomienie lokalne (PowerShell, Node 24+)
 
@@ -42,7 +44,7 @@ npm.cmd run dev
 
 Potem `http://localhost:5173`. Lokalnie baza to PGlite w `.data/` (poza gitem), więc nie trzeba Dockera ani Postgresa. W PowerShellu używaj `npm.cmd`, bo `npm` bywa blokowany przez politykę wykonywania skryptów.
 
-## 2. Wdrożenie na NAS (do zrobienia)
+## 2. Wdrożenie na NAS (zrobione — kroki zostają na wypadek reinstalacji)
 
 Dane: repo publiczne `https://github.com/dev-chintz/grosz`, NAS `100.112.158.37` (Tailscale, komputer musi być w tej samej sieci Tailscale), katalog `/share/Container/grosz`, aplikacja na porcie **8090**. Pełny opis: `.claude/skills/grosz/references/deploy-qnap.md`.
 
@@ -98,7 +100,7 @@ W aplikacji będzie pusty budżet: konto „Konto główne” z saldem 0, osoba 
 
 **Kolejne wydania:** wypchnij zmiany na GitHub, potem `ssh admin@100.112.158.37 'sh /share/Container/grosz/deploy/deploy.sh'`. Skrypt sam robi kopię bazy przed migracją.
 
-**Po wdrożeniu:** ustaw dobowy backup (`sh /share/Container/grosz/deploy/backup.sh daily`) w harmonogramie QNAP (Panel sterowania → System → Harmonogram zadań).
+**Dobowa kopia (crontab, bo QTS nie ma harmonogramu w GUI):** `echo "0 3 * * * PATH=$PATH sh /share/Container/grosz/deploy/backup.sh daily >> /share/Container/grosz/backups/cron.log 2>&1" >> /etc/config/crontab`, potem `crontab /etc/config/crontab && /etc/init.d/crond.sh restart`.
 
 ### Gdyby coś nie działało
 
