@@ -48,9 +48,9 @@ main() {
   fi
 
   echo "== Sprawdzam, czy wstała"
-  # Pierwszy start na NAS potrafi trwać ponad 2 minuty — czekamy do 5.
+  # 127.0.0.1, nie localhost: w kontenerze localhost to najpierw ::1, a serwer słucha na IPv4. Czekamy do 5 minut.
   for i in $(seq 1 100); do
-    if docker compose exec -T app wget -qO- http://localhost:3000/api/health 2>/dev/null; then
+    if docker compose exec -T app wget -qO- http://127.0.0.1:3000/api/health 2>/dev/null; then
       echo
       echo "== Gotowe: http://192.168.1.9:8090 (w domu) · http://100.112.158.37:8090 (Tailscale)"
       return 0
