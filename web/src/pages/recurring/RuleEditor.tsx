@@ -284,7 +284,13 @@ export function RuleEditor({
           error={err('startDate')}
           hint={form.unit === 'year' && form.startDate ? `co roku w ${MONTHS_LOCATIVE[parseIso(form.startDate).month - 1]}` : undefined}
         >
-          <input className={inputClass} type="date" value={form.startDate} aria-invalid={!!err('startDate')} onChange={(e) => set('startDate', e.target.value)} />
+          <input className={inputClass} type="date" value={form.startDate} aria-invalid={!!err('startDate')} onChange={(e) => {
+              const startDate = e.target.value;
+              set('startDate', startDate);
+              // Data pierwszej płatności wyznacza też dzień płatności — inaczej siatka zostaje na starym dniu
+              // i terminy rozjeżdżają się z tym, co użytkownik właśnie wpisał.
+              if (/^\d{4}-\d{2}-\d{2}$/.test(startDate)) setForm((f) => ({ ...f, dayOfMonth: parseIso(startDate).day, lastDayOfMonth: false }));
+            }} />
         </Field>
 
         {form.unit === 'week' && (
