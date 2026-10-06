@@ -6,6 +6,7 @@ import { validateAccountInput, validateHouseholdInput, validateMemberInput, type
 import { api, ApiError, HOUSEHOLD_CHANGED, type HouseholdChange } from '../api.ts';
 import { Field, inputClass } from '../components/controls.tsx';
 import { PasswordCard } from '../components/AuthGate.tsx';
+import { UpdateCard } from '../components/UpdateCard.tsx';
 import { Icon } from '../components/Icon.tsx';
 import styles from './Settings.module.css';
 
@@ -51,6 +52,7 @@ export function Settings() {
           <AccountsCard accounts={data.accounts} onChanged={reload} onError={setError} />
           <DataCard />
           <PasswordCard className={styles.card} />
+          <UpdateCard className={styles.card} />
         </div>
       )}
     </>

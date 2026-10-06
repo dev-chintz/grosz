@@ -17,11 +17,17 @@ services:
     profiles: ["tools"]
 
   app:
-    build: .
+    build:
+      context: .
+      # Wersja (commit) wbudowana w obraz — Ustawienia → Aktualizacja porównują ją z GitHubem.
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
     image: grosz:latest
     env_file: .env
     ports: ["8090:3000"]
-    # default: port 8090 wystawiony na NAS; db: dostęp do Postgresa.
+    # Publiczne DNS-y: DNS Container Station bywa zawodny dla github.com (sprawdzanie aktualizacji).
+    dns: [1.1.1.1, 8.8.8.8]
+    # default: port 8090 wystawiony na NAS i dostęp do updatera; db: dostęp do Postgresa.
     networks: [default, db]
     restart: unless-stopped
     healthcheck:
@@ -29,6 +35,21 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 5m
+
+  # Aktualizacja z Ustawień (wzorem Anvero): ma gniazdo Dockera, ale nie wystawia portu — woła go tylko app,
+  # z tokenem. Folder projektu montujemy pod tą samą ścieżką, bo deploy.sh montuje go dalej (alpine/git).
+  updater:
+    build: ./updater
+    image: grosz-updater:latest
+    restart: unless-stopped
+    environment:
+      UPDATER_TOKEN: ${UPDATER_TOKEN:-}
+      PROJECT_DIR: ${GROSZ_DIR:-/share/Container/grosz}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${GROSZ_DIR:-/share/Container/grosz}:${GROSZ_DIR:-/share/Container/grosz}
+    networks: [default]
 
 networks:
   db:

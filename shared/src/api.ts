@@ -259,3 +259,32 @@ export interface SettingsResponse {
 export type SaveAccountRequest = AccountInput;
 export type SaveHouseholdRequest = HouseholdInput;
 export type SaveMemberRequest = MemberInput;
+
+export interface UpdateChange {
+  sha: string;
+  message: string;
+  date: string;
+}
+
+export interface UpdateStatusResponse {
+  /** Commit zainstalowanej wersji (null w developmencie). */
+  current: string | null;
+  latest: UpdateChange | null;
+  /** O ile commitów zainstalowana wersja jest za GitHubem. */
+  behind: number | null;
+  /** Nowe zmiany, od najnowszej (najwyżej 20). */
+  changes: UpdateChange[];
+  checkError: string | null;
+  updater: {
+    configured: boolean;
+    reachable: boolean;
+    state: {
+      running: boolean;
+      startedAt: string | null;
+      finishedAt: string | null;
+      result: 'ok' | 'failed' | null;
+      steps: { title: string; at: string }[];
+      log: string;
+    } | null;
+  };
+}

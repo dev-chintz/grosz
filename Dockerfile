@@ -14,7 +14,8 @@ COPY web web
 RUN npm run build -w web
 
 FROM node:24-alpine
-ENV NODE_ENV=production PORT=3000
+ARG GIT_COMMIT=unknown
+ENV NODE_ENV=production PORT=3000 GIT_COMMIT=$GIT_COMMIT
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY shared/package.json shared/

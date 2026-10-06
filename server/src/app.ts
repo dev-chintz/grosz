@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { registerAuth } from './routes/auth.ts';
+import { registerUpdateRoutes } from './routes/update.ts';
 import { fileURLToPath } from 'node:url';
 import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
@@ -29,6 +30,7 @@ export function buildApp(connection: Connection) {
   });
   // Logowanie najpierw: hak onRequest musi obejmować wszystkie trasy /api/*.
   registerAuth(app, db);
+  registerUpdateRoutes(app);
 
   const requireHousehold = async () => {
     const id = await currentHouseholdId(db);

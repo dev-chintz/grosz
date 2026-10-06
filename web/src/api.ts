@@ -1,4 +1,4 @@
-import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SaveMemberRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse } from '@grosz/shared/api';
+import type { CalendarResponse, CategoriesResponse, ReportsResponse, SaveAccountRequest, SaveHouseholdRequest, SaveMemberRequest, SettingsResponse, SaveCategoryRequest, DashboardResponse, OptionsResponse, RecurringListResponse, SaveRuleRequest, SaveTransactionRequest, TransactionsResponse, UpdateStatusResponse } from '@grosz/shared/api';
 
 /** Zdarzenie okna: zmieniono nazwę gospodarstwa (detail = nowa nazwa). Odświeża kartę w sidebarze. */
 export const HOUSEHOLD_CHANGED = 'grosz:household-changed';
@@ -41,6 +41,8 @@ export interface AuthStatus {
 }
 
 export const api = {
+  updateStatus: () => request<UpdateStatusResponse>('/api/update/status'),
+  startUpdate: () => post<{ ok: boolean }>('/api/update'),
   authStatus: () => request<AuthStatus>('/api/auth/status'),
   login: (login: string, password: string) => post<{ ok: boolean }>('/api/auth/login', { login, password }),
   setup: (data: { code: string; name: string; login: string; password: string }) => post<{ ok: boolean }>('/api/auth/setup', data),

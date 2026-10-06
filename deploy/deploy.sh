@@ -26,7 +26,10 @@ main() {
   pull
 
   echo "== Buduję obraz"
-  docker compose build
+  # Commit trafia do obrazu (GIT_COMMIT) — po nim Ustawienia poznają, czy jest nowsza wersja.
+  GIT_COMMIT=$(docker run --rm -v "$PWD":/git -w /git alpine/git rev-parse HEAD)
+  export GIT_COMMIT
+  docker compose build app
 
   echo "== Kopia bazy przed migracją"
   sh deploy/backup.sh pre-deploy
@@ -39,10 +42,14 @@ main() {
 
   echo "== Uruchamiam aplikację"
   docker compose up -d app
+  # Updater (aktualizacja z Ustawień) — tylko przy ręcznym deployu: z jego wnętrza restart przerwałby własny przebieg.
+  if [ -z "${RUNNING_IN_UPDATER:-}" ] && grep -q "^UPDATER_TOKEN=." .env; then
+    docker compose up -d --build updater
+  fi
 
   echo "== Sprawdzam, czy wstała"
-  # Pierwszy start na NAS trwa ponad 30 s — czekamy do 2 minut.
-  for i in $(seq 1 40); do
+  # Pierwszy start na NAS potrafi trwać ponad 2 minuty — czekamy do 5.
+  for i in $(seq 1 100); do
     if docker compose exec -T app wget -qO- http://localhost:3000/api/health; then
       echo
       echo "== Gotowe: http://192.168.1.9:8090 (w domu) · http://100.112.158.37:8090 (Tailscale)"
