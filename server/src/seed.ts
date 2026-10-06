@@ -6,6 +6,7 @@ import { today } from '@grosz/shared/dates';
 import { parsePLN } from '@grosz/shared/format';
 import { connect } from './db/client.ts';
 import { accounts, categories, households, occurrences, recurringRules, ruleAmountVersions, transactions, users } from './db/schema.ts';
+import { DEFAULT_CATEGORIES } from './domain/bootstrap.ts';
 import { currentHouseholdId } from './domain/household.ts';
 import { ensureOccurrences } from './domain/rules.ts';
 
@@ -42,10 +43,7 @@ async function seed() {
     .values({ householdId, name: 'Konto główne', openingBalance: zl('3280'), openingDate: trackFrom })
     .returning();
 
-  const categoryNames = {
-    expense: ['Mieszkanie', 'Transport', 'Jedzenie', 'Raty', 'Abonamenty', 'Prezenty', 'Sport i zdrowie'],
-    income: ['Wynagrodzenie', 'Dodatkowe'],
-  } as const;
+  const categoryNames = DEFAULT_CATEGORIES;
   // Przykładowe limity: Jedzenie z zapasem, Transport celowo przekroczony (serwis auta), Mieszkanie blisko limitu.
   const limits: Record<string, number> = { Jedzenie: zl('1200'), Transport: zl('800'), Mieszkanie: zl('3300'), Abonamenty: zl('200') };
   const categoryRows = await db

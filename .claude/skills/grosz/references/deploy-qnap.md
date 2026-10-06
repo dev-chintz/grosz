@@ -16,16 +16,16 @@
 PC (Windows, C:\Users\Chintz\projects\budzet)
    │  git push
    ▼
-GitHub — prywatne repozytorium ⟨REPO⟩
-   │  git pull przez SSH z kluczem tylko do odczytu (deploy key)
+GitHub — publiczne repozytorium https://github.com/dev-chintz/grosz
+   │  git pull przez https (repo publiczne — bez kluczy i haseł)
    ▼
 QNAP „DOMOWY” (w sieci Tailscale: 100.112.158.37), Container Station
-   ├─ katalog ⟨APP_DIR⟩ z kopią repo + .env + .deploy/id_ed25519 (poza gitem)
+   ├─ katalog /share/Container/grosz z kopią repo + .env (poza gitem)
    ├─ docker compose: usługa `migrate` (jednorazowa) → usługa `app` na porcie 8090
    └─ PostgreSQL w osobnym kontenerze anvero-db-db-1, port 5432 wystawiony na NAS; baza `grosz`, użytkownik `grosz`
 ```
 
-Aplikacja: `http://DOMOWY:8090` — działa w sieci domowej i z każdego urządzenia w tej samej sieci Tailscale.
+Aplikacja: `http://100.112.158.37:8090` (albo `http://DOMOWY:8090`) — działa w sieci domowej i z każdego urządzenia w tej samej sieci Tailscale.
 
 Dlaczego obraz budujemy na NAS, a nie na PC: QNAP może mieć procesor ARM albo x86, a obraz zbudowany na miejscu zawsze pasuje do jego architektury. Poza tym na dysku C: w PC jest mało miejsca, a Docker Desktop trzyma obrazy właśnie tam.
 
@@ -37,9 +37,9 @@ Gdy trafisz na wartość ⟨…⟩, zapytaj użytkownika i wpisz odpowiedź tuta
 
 | Wartość | Ustalenie | Status |
 |---|---|---|
-| Repozytorium | prywatne repo na GitHubie; NAS pobiera przez SSH z deploy key (tylko odczyt) | ustalone 2026-10-06 |
-| ⟨REPO⟩ — adres repo | `git@github.com:<konto>/grosz.git` | do uzupełnienia |
-| ⟨APP_DIR⟩ — katalog aplikacji na NAS | `/share/Container/grosz` | do potwierdzenia |
+| Repozytorium | **publiczne** `https://github.com/dev-chintz/grosz` (bez deploy key; NAS pobiera zwykłym https) | ustalone 2026-10-06 |
+| Katalog aplikacji na NAS | `/share/Container/grosz` | ustalone 2026-10-06 |
+| Adres NAS | `100.112.158.37` (Tailscale); SSH: `ssh admin@100.112.158.37` | ustalone 2026-10-06 |
 | PostgreSQL | w kontenerze w Container Station, port 5432 wystawiony na NAS | ustalone 2026-10-06 |
 | anvero-db-db-1 — nazwa kontenera Postgresa | `anvero-db-db-1` (należy do stosu innego projektu użytkownika, Anvero; grosz ma w nim osobną bazę i osobnego użytkownika, nie dotykaj bazy Anvero) | ustalone 2026-10-06 |
 | Wersja PostgreSQL | **17** (obraz `postgres:17`) → `PG_IMAGE=postgres:17-alpine` do kopii zapasowych | ustalone 2026-10-06 |
@@ -94,19 +94,21 @@ Aplikacja ma endpoint `GET /api/health`, który sprawdza połączenie z bazą �
 
 ## 5. Wydanie nowej wersji na NAS
 
-Na QNAP domyślnie nie ma gita, więc używamy go z jednorazowego kontenera `alpine/git` — nic nie instalujemy na samym NAS.
+Na QNAP domyślnie nie ma gita, więc używamy go z jednorazowego kontenera `alpine/git` — nic nie instalujemy na samym NAS. Repo jest publiczne, więc NAS pobiera je zwykłym https, bez kluczy i haseł.
 
-**Dostęp NAS do prywatnego repo (jednorazowo):** klucz SSH tylko do odczytu, dodany w GitHubie jako *Deploy key* repozytorium (Settings → Deploy keys, bez „Allow write access”). Działa wyłącznie dla tego jednego repo, więc wyciek klucza nie daje dostępu do reszty konta.
+**Pierwsze wdrożenie (jednorazowo, po SSH na NAS):**
+1. Baza i rola `grosz` w kontenerze Postgresa (sekcja 4); hasło trafia tylko do `.env`.
+2. Klon do **pustego** katalogu (git odmawia klonowania do niepustego, więc `.env` tworzysz dopiero po klonie):
 ```sh
-mkdir -p ⟨APP_DIR⟩/.deploy && cd ⟨APP_DIR⟩
-docker run --rm -v "$PWD/.deploy":/k --entrypoint ssh-keygen alpine/git -t ed25519 -N "" -C "grosz-nas-deploy" -f /k/id_ed25519
-cat .deploy/id_ed25519.pub     # tę linię wkleja użytkownik w GitHubie jako Deploy key
-GIT_SSH='ssh -i /k/id_ed25519 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/k/known_hosts'
-docker run --rm -v "$PWD":/git -v "$PWD/.deploy":/k -e GIT_SSH_COMMAND="$GIT_SSH" -w /git alpine/git clone ⟨REPO⟩ .
+mkdir -p /share/Container/grosz && cd /share/Container/grosz
+docker run --rm -v "$PWD":/git -w /git alpine/git clone https://github.com/dev-chintz/grosz.git .
+cp .env.example .env     # uzupełnij hasło do bazy; plik nie trafia do gita
 ```
-Klucz prywatny nie opuszcza NAS. Katalog `.deploy/` jest w `.gitignore`.
+3. `sh deploy/deploy.sh` — przy pierwszym uruchomieniu zakłada też pusty budżet (gospodarstwo, osoba „Ja”, konto „Konto główne” z saldem 0 i domyślne kategorie). Na pustej bazie bez tego kroku każdy ekran zwraca 409.
 
-Skrypt `deploy/deploy.sh` (w repo; na NAS: `ssh admin@DOMOWY 'sh ⟨APP_DIR⟩/deploy/deploy.sh'`) robi kolejno: `git pull --ff-only` kluczem deploy → `docker compose build` → `deploy/backup.sh pre-deploy` → `docker compose run --rm migrate` → `docker compose up -d app` → do 30 s sprawdzania `/api/health`.
+Kolejne wydania: `ssh admin@100.112.158.37 'sh /share/Container/grosz/deploy/deploy.sh'`.
+
+Skrypt `deploy/deploy.sh` robi kolejno: `git pull --ff-only` (https) → `docker compose build` → `deploy/backup.sh pre-deploy` → `docker compose run --rm migrate` → `docker compose run --rm migrate node server/src/bootstrap.ts` (pusty budżet, tylko gdy nie ma jeszcze gospodarstwa; idempotentne) → `docker compose up -d app` → do 30 s sprawdzania `/api/health`.
 
 Kolejność ma znaczenie: kopia → migracja → nowa aplikacja. Jeśli migracja się nie uda, skrypt zatrzymuje się (`set -e`) przed podmianą aplikacji, a kopia pozwala wrócić do stanu sprzed wydania.
 
@@ -114,7 +116,7 @@ Przed wdrożeniem upewnij się, że zmiany są wypchnięte (`git status`, `git p
 
 ## 6. Kopie zapasowe i przywracanie
 
-`deploy/backup.sh` robi `pg_dump` z kontenera `postgres:<ta sama lub nowsza wersja niż serwer>-alpine` do `⟨APP_DIR⟩/backups/grosz-<data>-<etykieta>.sql.gz` i zostawia 30 ostatnich plików. Wołany przed każdym wdrożeniem i raz na dobę (harmonogram w panelu QNAP: Panel sterowania → System → Harmonogram zadań lub crontab).
+`deploy/backup.sh` robi `pg_dump` z kontenera `postgres:<ta sama lub nowsza wersja niż serwer>-alpine` do `/share/Container/grosz/backups/grosz-<data>-<etykieta>.sql.gz` i zostawia 30 ostatnich plików. Wołany przed każdym wdrożeniem i raz na dobę (harmonogram w panelu QNAP: Panel sterowania → System → Harmonogram zadań lub crontab).
 
 `pg_dump` musi być w wersji ≥ wersji serwera, inaczej odmówi działania — stąd potrzeba ustalenia wersji PostgreSQL (sekcja 2).
 
