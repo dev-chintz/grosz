@@ -5,11 +5,12 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-# Kod pobieramy przez sieć NAS-a (--network host): DNS, który Container Station daje kontenerom (10.0.3.1),
+# Kod pobieramy z publicznymi DNS-ami: zarówno DNS Container Station (10.0.3.1), jak i resolver NAS-a
 # bywa chwilowo zawodny („Could not resolve host: github.com”). Do tego trzy próby.
 pull() {
   for attempt in 1 2 3; do
-    if docker run --rm --network host -v "$PWD":/git -w /git alpine/git pull --ff-only; then
+    # Publiczne DNS-y: lokalny resolver NAS-a i Container Station zwracają czasem pustą odpowiedź dla github.com.
+    if docker run --rm --dns 1.1.1.1 --dns 8.8.8.8 -v "$PWD":/git -w /git alpine/git pull --ff-only; then
       return 0
     fi
     echo "   (próba $attempt nieudana)"
