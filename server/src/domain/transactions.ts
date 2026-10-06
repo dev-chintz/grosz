@@ -29,13 +29,13 @@ class TransactionNotFoundError extends Error {
 /** Znaki specjalne LIKE traktujemy dosłownie — „50%” ma szukać „50%”, a nie wszystkiego. */
 const likePattern = (query: string) => `%${query.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
 
-type OccurrenceRow = { occurrence: typeof occurrences.$inferSelect; rule: typeof recurringRules.$inferSelect; categoryName: string | null; accountName: string | null; userName: string | null };
-type TransactionRow = { tx: typeof transactions.$inferSelect; categoryName: string | null; accountName: string | null; userName: string | null };
+type OccurrenceRow = { occurrence: typeof occurrences.$inferSelect; rule: typeof recurringRules.$inferSelect; categoryName: string | null; accountName: string | null; accountBank: string | null; userName: string | null };
+type TransactionRow = { tx: typeof transactions.$inferSelect; categoryName: string | null; accountName: string | null; accountBank: string | null; userName: string | null };
 
 /** Łączy terminy cykliczne i operacje jednorazowe w jedną listę (od najnowszych) ze statusami względem `today`. */
 export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRows: TransactionRow[], today: IsoDate): LedgerItem[] {
   return [
-    ...transactionRows.map(({ tx, categoryName, accountName, userName }): LedgerItem => ({
+    ...transactionRows.map(({ tx, categoryName, accountName, accountBank, userName }): LedgerItem => ({
       kind: 'oneoff',
       id: tx.id,
       ruleId: null,
@@ -49,12 +49,13 @@ export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRow
       categoryName,
       accountId: tx.accountId,
       accountName,
+      accountBank,
       userId: tx.userId,
       userName,
       note: tx.note,
       status: tx.date <= today ? 'done' : 'planned',
     })),
-    ...occurrenceRows.map(({ occurrence, rule, categoryName, accountName, userName }): LedgerItem => {
+    ...occurrenceRows.map(({ occurrence, rule, categoryName, accountName, accountBank, userName }): LedgerItem => {
       const status: LedgerStatus = occurrence.status === 'paid' ? 'done' : occurrence.dueDate < today ? 'overdue' : 'planned';
       const actual = occurrence.actualAmount;
       return {
@@ -71,6 +72,7 @@ export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRow
         categoryName,
         accountId: rule.accountId,
         accountName,
+        accountBank,
         userId: rule.userId,
         userName,
         note: null,
@@ -83,7 +85,7 @@ export function buildLedgerItems(occurrenceRows: OccurrenceRow[], transactionRow
 export async function listLedger(
   db: Db,
   householdId: string,
-  params: { month: string | null; query: string | null; /** id osoby albo 'none' (wspólne); null = wszyscy */ user: string | null },
+  params: { month: string | null; query: string | null; /** id osoby albo 'none' (wspólne); null = wszyscy */ user: string | null; /** id konta; null = wszystkie */ account: string | null },
   today: IsoDate,
 ): Promise<TransactionsResponse> {
   const query = params.query?.trim() || null;
@@ -109,6 +111,13 @@ export async function listLedger(
     occurrenceFilters.push(eq(recurringRules.userId, params.user));
     transactionFilters.push(eq(transactions.userId, params.user));
   }
+  if (params.account === 'none') {
+    occurrenceFilters.push(isNull(recurringRules.accountId));
+    transactionFilters.push(isNull(transactions.accountId));
+  } else if (params.account) {
+    occurrenceFilters.push(eq(recurringRules.accountId, params.account));
+    transactionFilters.push(eq(transactions.accountId, params.account));
+  }
   if (query) {
     const pattern = likePattern(query);
     occurrenceFilters.push(or(ilike(recurringRules.name, pattern), ilike(categories.name, pattern))!);
@@ -118,7 +127,7 @@ export async function listLedger(
 
   const [occurrenceRows, transactionRows] = await Promise.all([
     db
-      .select({ occurrence: occurrences, rule: recurringRules, categoryName: categories.name, accountName: accounts.name, userName: users.name })
+      .select({ occurrence: occurrences, rule: recurringRules, categoryName: categories.name, accountName: accounts.name, accountBank: accounts.bank, userName: users.name })
       .from(occurrences)
       .innerJoin(recurringRules, eq(occurrences.ruleId, recurringRules.id))
       .leftJoin(categories, eq(recurringRules.categoryId, categories.id))
@@ -128,7 +137,7 @@ export async function listLedger(
       .orderBy(desc(occurrences.dueDate))
       .limit(limit),
     db
-      .select({ tx: transactions, categoryName: categories.name, accountName: accounts.name, userName: users.name })
+      .select({ tx: transactions, categoryName: categories.name, accountName: accounts.name, accountBank: accounts.bank, userName: users.name })
       .from(transactions)
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))

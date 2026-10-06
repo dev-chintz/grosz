@@ -33,6 +33,7 @@ export function Transactions() {
   const month = params.get('month') ?? todayIso().slice(0, 7);
   const query = params.get('q')?.trim() ?? '';
   const user = params.get('user') ?? '';
+  const account = params.get('account') ?? '';
   const [searchText, setSearchText] = useState(query);
   const [data, setData] = useState<TransactionsResponse | null>(null);
   const [options, setOptions] = useState<OptionsResponse | null>(null);
@@ -47,14 +48,14 @@ export function Transactions() {
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    api.transactions({ ...(query ? { q: query } : { month }), ...(user ? { user } : {}) }).then(
+    api.transactions({ ...(query ? { q: query } : { month }), ...(user ? { user } : {}), ...(account ? { account } : {}) }).then(
       (result) => !cancelled && setData(result),
       (e: Error) => !cancelled && setError(e.message),
     );
     return () => {
       cancelled = true;
     };
-  }, [month, query, user, reloadKey]);
+  }, [month, query, user, account, reloadKey]);
 
   useEffect(() => {
     api.options().then(setOptions, () => {});
@@ -153,6 +154,30 @@ export function Transactions() {
 
       <div className={styles.filters}>
         <Segmented label="Filtr" tone="ground" value={filter} onChange={setFilter} options={FILTERS.map((f) => ({ value: f.value, label: f.label, count: counts[f.value] }))} />
+        {options && options.accounts.length > 0 && (
+          <label className={styles.userFilter}>
+            Konto
+            <select
+              className={inputClass}
+              value={account}
+              onChange={(e) =>
+                setParams((p) => {
+                  const next = new URLSearchParams(p);
+                  if (e.target.value) next.set('account', e.target.value);
+                  else next.delete('account');
+                  return next;
+                })
+              }
+            >
+              <option value="">Wszystkie</option>
+              {options.accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {options && options.members.length > 1 && (
           <label className={styles.userFilter}>
             Kto

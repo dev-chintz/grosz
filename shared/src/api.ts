@@ -95,7 +95,7 @@ export interface RecurringListResponse {
 
 export interface OptionsResponse {
   categories: { id: string; name: string; direction: Direction }[];
-  accounts: { id: string; name: string }[];
+  accounts: { id: string; name: string; bank: string | null }[];
   members: { id: string; name: string }[];
 }
 
@@ -166,6 +166,8 @@ export interface LedgerItem {
   categoryName: string | null;
   accountId: string | null;
   accountName: string | null;
+  /** Bank code for the account, or null. */
+  accountBank: string | null;
   /** Domownik; null = wspólna. */
   userId: string | null;
   userName: string | null;
@@ -235,6 +237,8 @@ export interface AccountDto {
   openingBalance: number;
   openingDate: IsoDate;
   archived: boolean;
+  /** Bank code from BANKS, or null. */
+  bank: string | null;
   /** Ile płatności cyklicznych i operacji jednorazowych jest przypisanych do konta. */
   rulesCount: number;
   transactionsCount: number;

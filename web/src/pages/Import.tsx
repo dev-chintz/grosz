@@ -8,6 +8,8 @@ import { Field, inputClass } from '../components/controls.tsx';
 import { Icon } from '../components/Icon.tsx';
 import styles from './Import.module.css';
 
+const BANK_TO_ACCOUNT_BANK: Record<string, string> = { alior: 'alior' };
+
 type Decision = { action: ImportAction; categoryId: string | null };
 
 const STATUS_LABEL: Record<ImportPreviewRow['status'], string> = {
@@ -42,6 +44,14 @@ export function Import() {
     try {
       const parsed = parseBankFile(decodeBankFile(await selected.arrayBuffer()));
       setFile({ name: selected.name, parsed });
+      // Auto-select account with matching bank
+      const accountBankCode = BANK_TO_ACCOUNT_BANK[parsed.bank];
+      if (accountBankCode && options) {
+        const matchingAccount = options.accounts.find((a) => a.bank === accountBankCode);
+        if (matchingAccount) {
+          setAccountId(matchingAccount.id);
+        }
+      }
       setBusy(true);
       const preview = await api.importPreview(parsed.rows);
       setRows(preview.rows);

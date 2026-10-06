@@ -152,7 +152,7 @@ export async function listOptions(db: Db, householdId: string): Promise<OptionsR
       .where(eq(categories.householdId, householdId))
       .orderBy(asc(categories.direction), asc(categories.sortOrder), asc(categories.name)),
     db
-      .select({ id: accounts.id, name: accounts.name })
+      .select({ id: accounts.id, name: accounts.name, bank: accounts.bank })
       .from(accounts)
       .where(and(eq(accounts.householdId, householdId), eq(accounts.archived, false)))
       .orderBy(asc(accounts.name)),

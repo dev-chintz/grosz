@@ -8,6 +8,8 @@ export interface AccountInput {
   openingBalance: number;
   /** YYYY-MM-DD */
   openingDate: string;
+  /** Bank code from BANKS, or null. */
+  bank: string | null;
 }
 
 export type AccountInputErrors = Partial<Record<keyof AccountInput, string>>;

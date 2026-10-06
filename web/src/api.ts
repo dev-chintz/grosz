@@ -64,8 +64,8 @@ export const api = {
   resumeRule: (id: string) => post<{ ok: boolean }>(`/api/recurring/${id}/resume`),
   deleteRule: (id: string) => request<{ ok: boolean }>(`/api/recurring/${id}`, { method: 'DELETE' }),
 
-  /** user: id osoby albo „none” (operacje wspólne); brak = wszyscy. */
-  transactions: (params: { month?: string; q?: string; user?: string }) => {
+  /** user: id osoby albo „none” (operacje wspólne); brak = wszyscy. account: id konta albo „none”; brak = wszystkie. */
+  transactions: (params: { month?: string; q?: string; user?: string; account?: string }) => {
     const search = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1]));
     return request<TransactionsResponse>(`/api/transactions?${search}`);
   },

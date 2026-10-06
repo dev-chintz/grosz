@@ -16,6 +16,7 @@ const item = (patch: Partial<LedgerItem>): LedgerItem => ({
   categoryName: 'Jedzenie',
   accountId: null,
   accountName: 'Konto',
+  accountBank: null,
   userId: null,
   userName: null,
   note: null,

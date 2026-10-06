@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isCalendarDate, validateAccountInput, validateHouseholdInput, validateMemberInput } from './settings.ts';
 
-const valid = { name: 'Konto główne', openingBalance: 234_050, openingDate: '2026-01-01' };
+const valid = { name: 'Konto główne', openingBalance: 234_050, openingDate: '2026-01-01', bank: null };
 
 describe('isCalendarDate', () => {
   it('przyjmuje prawdziwe daty, także 29 lutego w roku przestępnym', () => {

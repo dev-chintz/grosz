@@ -67,6 +67,8 @@ export const accounts = pgTable(
     /** Saldo na początek dnia `opening_date`; od niego liczymy prognozę salda. */
     openingBalance: integer('opening_balance').notNull().default(0),
     openingDate: date('opening_date').notNull(),
+    /** Kod banku z listy w shared/banks.ts; null = konto bez banku. */
+    bank: text('bank'),
     archived: boolean('archived').notNull().default(false),
     createdAt: createdAt(),
   },

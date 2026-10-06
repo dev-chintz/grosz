@@ -3,6 +3,7 @@ import type { AccountDto, MemberDto, SettingsResponse } from '@grosz/shared/api'
 import { today as todayIso } from '@grosz/shared/dates';
 import { formatPLN, formatShortDate, parsePLN, plural } from '@grosz/shared/format';
 import { validateAccountInput, validateHouseholdInput, validateMemberInput, type AccountInputErrors } from '@grosz/shared/settings';
+import { BANK_OPTIONS } from '@grosz/shared/banks';
 import { api, ApiError, HOUSEHOLD_CHANGED, type HouseholdChange } from '../api.ts';
 import { Field, inputClass } from '../components/controls.tsx';
 import { PasswordCard } from '../components/AuthGate.tsx';
@@ -216,12 +217,13 @@ function AccountForm({ initial, existingNames, onCancel, onSaved }: { initial: A
   const [name, setName] = useState(initial?.name ?? '');
   const [balance, setBalance] = useState(initial ? amountText(initial.openingBalance) : '0,00');
   const [openingDate, setOpeningDate] = useState(initial?.openingDate ?? todayIso());
+  const [bank, setBank] = useState(initial?.bank ?? '');
   const [errors, setErrors] = useState<AccountInputErrors>({});
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     const parsed = parsePLN(balance);
-    const input = { name, openingBalance: parsed ?? Number.NaN, openingDate };
+    const input = { name, openingBalance: parsed ?? Number.NaN, openingDate, bank: bank || null };
     const clientErrors = validateAccountInput(input, existingNames);
     if (Object.keys(clientErrors).length) return setErrors(clientErrors);
     setBusy(true);
@@ -258,6 +260,16 @@ function AccountForm({ initial, existingNames, onCancel, onSaved }: { initial: A
       </Field>
       <Field label="Na dzień" error={errors.openingDate}>
         <input className={inputClass} type="date" value={openingDate} aria-invalid={!!errors.openingDate} onChange={(e) => touch(setOpeningDate)(e.target.value)} />
+      </Field>
+      <Field label="Bank (opcjonalnie)">
+        <select className={inputClass} value={bank} onChange={(e) => touch(setBank)(e.target.value)}>
+          <option value="">— brak banku</option>
+          {BANK_OPTIONS.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
       </Field>
       <div className={styles.buttons}>
         <button type="button" className={styles.ghostButton} onClick={onCancel}>

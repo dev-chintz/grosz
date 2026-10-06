@@ -54,6 +54,7 @@ export async function getSettings(db: Db, householdId: string): Promise<Settings
     openingBalance: a.openingBalance,
     openingDate: a.openingDate,
     archived: a.archived,
+    bank: a.bank,
     rulesCount: ruleCounts.find((r) => r.accountId === a.id)?.n ?? 0,
     transactionsCount: transactionCounts.find((r) => r.accountId === a.id)?.n ?? 0,
   }));
@@ -82,7 +83,7 @@ export async function createAccount(db: Db, householdId: string, input: AccountI
   if (Object.keys(errors).length) throw new SettingsValidationError(errors);
   const [row] = await db
     .insert(accounts)
-    .values({ householdId, name: input.name.trim(), openingBalance: input.openingBalance, openingDate: input.openingDate })
+    .values({ householdId, name: input.name.trim(), openingBalance: input.openingBalance, openingDate: input.openingDate, bank: input.bank })
     .returning({ id: accounts.id });
   return row!.id;
 }
@@ -93,7 +94,7 @@ export async function updateAccount(db: Db, householdId: string, id: string, inp
   if (Object.keys(errors).length) throw new SettingsValidationError(errors);
   await db
     .update(accounts)
-    .set({ name: input.name.trim(), openingBalance: input.openingBalance, openingDate: input.openingDate })
+    .set({ name: input.name.trim(), openingBalance: input.openingBalance, openingDate: input.openingDate, bank: input.bank })
     .where(and(eq(accounts.id, id), eq(accounts.householdId, householdId)));
 }
 

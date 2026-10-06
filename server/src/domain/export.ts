@@ -61,7 +61,7 @@ export async function exportLedger(db: Db, householdId: string, range: { from: I
 
   const [occurrenceRows, transactionRows] = await Promise.all([
     db
-      .select({ occurrence: occurrences, rule: recurringRules, categoryName: categories.name, accountName: accounts.name, userName: users.name })
+      .select({ occurrence: occurrences, rule: recurringRules, categoryName: categories.name, accountName: accounts.name, accountBank: accounts.bank, userName: users.name })
       .from(occurrences)
       .innerJoin(recurringRules, eq(occurrences.ruleId, recurringRules.id))
       .leftJoin(categories, eq(recurringRules.categoryId, categories.id))
@@ -69,7 +69,7 @@ export async function exportLedger(db: Db, householdId: string, range: { from: I
       .leftJoin(users, eq(recurringRules.userId, users.id))
       .where(and(...occurrenceFilters)),
     db
-      .select({ tx: transactions, categoryName: categories.name, accountName: accounts.name, userName: users.name })
+      .select({ tx: transactions, categoryName: categories.name, accountName: accounts.name, accountBank: accounts.bank, userName: users.name })
       .from(transactions)
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))

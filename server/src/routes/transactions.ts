@@ -32,7 +32,7 @@ const withDefaults = (body: SaveTransactionRequest): SaveTransactionRequest => (
 });
 
 export function registerTransactionRoutes(app: FastifyInstance, db: Db, requireHousehold: () => Promise<string>) {
-  app.get<{ Querystring: { month?: string; q?: string; user?: string } }>(
+  app.get<{ Querystring: { month?: string; q?: string; user?: string; account?: string } }>(
     '/api/transactions',
     {
       schema: {
@@ -43,11 +43,13 @@ export function registerTransactionRoutes(app: FastifyInstance, db: Db, requireH
             q: { type: 'string', maxLength: 100 },
             // id osoby albo „none” (operacje wspólne); brak = wszyscy
             user: { anyOf: [{ type: 'string', format: 'uuid' }, { const: 'none' }] },
+            // id konta albo „none” (operacje bez konta); brak = wszystkie
+            account: { anyOf: [{ type: 'string', format: 'uuid' }, { const: 'none' }] },
           },
         },
       },
     },
-    async (request) => listLedger(db, await requireHousehold(), { month: request.query.month ?? null, query: request.query.q ?? null, user: request.query.user ?? null }, today()),
+    async (request) => listLedger(db, await requireHousehold(), { month: request.query.month ?? null, query: request.query.q ?? null, user: request.query.user ?? null, account: request.query.account ?? null }, today()),
   );
 
   app.post<{ Body: SaveTransactionRequest }>('/api/transactions', { schema: { body: transactionBody } }, async (request, reply) => {
