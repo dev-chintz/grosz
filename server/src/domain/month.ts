@@ -1,20 +1,24 @@
 // Wspólne zapytania dla widoków miesiąca (Pulpit, Kalendarz).
 
 import { and, asc, eq, gte, lt, lte, ne, sql } from 'drizzle-orm';
-import { addMonths, daysInMonth, toIso, type IsoDate } from '@grosz/shared/dates';
+import { addMonths, daysInMonth, today as todayIso, toIso, type IsoDate } from '@grosz/shared/dates';
 import type { Db } from '../db/client.ts';
 import { accounts, categories, occurrences, recurringRules, transactions } from '../db/schema.ts';
-import { ensureOccurrences } from './rules.ts';
+import { ensureOccurrences, settleAutoBooked } from './rules.ts';
 
 /** Ile miesięcy do przodu trzymamy wygenerowane terminy. */
 const HORIZON_MONTHS = 3;
 
 export const signed = (direction: 'expense' | 'income', amount: number) => (direction === 'income' ? amount : -amount);
 
-/** Dopilnowuje, żeby terminy cykliczne były wygenerowane do HORIZON_MONTHS za oglądanym miesiącem. */
+/**
+ * Dopilnowuje, żeby terminy cykliczne były wygenerowane do HORIZON_MONTHS za oglądanym miesiącem,
+ * i księguje automatycznie te, których dzień już nadszedł.
+ */
 export async function ensureHorizon(db: Db, householdId: string, year: number, month: number): Promise<void> {
   const horizon = addMonths(year, month, HORIZON_MONTHS);
   await ensureOccurrences(db, householdId, toIso(horizon.year, horizon.month, daysInMonth(horizon.year, horizon.month)));
+  await settleAutoBooked(db, householdId, todayIso());
 }
 
 /** Terminy cykliczne (bez pominiętych) i operacje jednorazowe z zakresu [from, to]. */

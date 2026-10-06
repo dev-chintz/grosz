@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { addDays, type IsoDate } from '@grosz/shared/dates';
 import { amountAt, occurrencesBetween, type RecurrenceRule } from '@grosz/shared/recurrence';
 import type { Db } from '../db/client.ts';
@@ -75,4 +75,29 @@ export async function setOccurrencePaid(
     .where(and(eq(occurrences.id, occurrenceId), eq(occurrences.householdId, householdId)))
     .returning({ id: occurrences.id });
   return updated.length > 0;
+}
+
+/**
+ * Księguje automatycznie terminy reguł z włączonym „Księguj automatycznie”: nieopłacone, z datą dzisiejszą lub wcześniejszą;
+ * jako dzień zapłaty wpisuje datę terminu, a kwota zostaje planowana. Pomija reguły o zmiennej kwocie — nie wiadomo, ile
+ * naprawdę zeszło (np. prąd). Każdy termin jest księgowany raz: znacznik `auto_booked_at` sprawia, że ręcznie cofnięta
+ * płatność nie wraca po następnym otwarciu widoku. Idempotentne, więc równoległe zapytania niczego nie psują.
+ */
+export async function settleAutoBooked(db: Db, householdId: string, today: IsoDate): Promise<void> {
+  const autoRules = db
+    .select({ id: recurringRules.id })
+    .from(recurringRules)
+    .where(and(eq(recurringRules.householdId, householdId), eq(recurringRules.autoBook, true), eq(recurringRules.variableAmount, false)));
+  await db
+    .update(occurrences)
+    .set({ status: 'paid', paidOn: sql`${occurrences.dueDate}`, autoBookedAt: new Date() })
+    .where(
+      and(
+        eq(occurrences.householdId, householdId),
+        eq(occurrences.status, 'planned'),
+        isNull(occurrences.autoBookedAt),
+        lte(occurrences.dueDate, today),
+        inArray(occurrences.ruleId, autoRules),
+      ),
+    );
 }

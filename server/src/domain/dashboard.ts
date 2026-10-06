@@ -69,6 +69,7 @@ export async function buildDashboard(db: Db, householdId: string, month: string,
         meta: parts.join(' · '),
         variableAmount: rule.variableAmount,
         paid: occurrence.status === 'paid',
+        reminder: rule.remindDaysBefore !== null && occurrence.status !== 'paid' && daysBetween(today, occurrence.dueDate) <= rule.remindDaysBefore,
       };
     });
 

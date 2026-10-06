@@ -406,11 +406,18 @@ export function RuleEditor({
             </>
           )}
         </div>
+        {form.remindDaysBefore !== null && (
+          <p className={styles.note}>Wyróżnimy tę płatność na Pulpicie, gdy do terminu zostanie tyle dni lub mniej. Aplikacja nie wysyła powiadomień.</p>
+        )}
         <Switch
           checked={form.autoBook}
           onChange={(v) => set('autoBook', v)}
           label="Księguj automatycznie"
-          description="W dniu płatności oznacz jako opłacone (np. stałe zlecenie w banku)."
+          description={
+            form.variableAmount
+              ? 'Przy zmiennej kwocie księgowanie jest wyłączone — rzeczywistą kwotę potwierdzasz sam.'
+              : 'W dniu terminu oznacz jako opłacone (np. stałe zlecenie w banku). Terminy z bieżącego miesiąca, które już minęły, też zostaną zaksięgowane.'
+          }
         />
         <Field label="Notatka" hint="opcjonalnie">
           <textarea className={inputClass} value={form.note ?? ''} onChange={(e) => set('note', e.target.value || null)} />

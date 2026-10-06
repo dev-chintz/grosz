@@ -140,6 +140,8 @@ export const occurrences = pgTable(
     actualAmount: integer('actual_amount'),
     status: occurrenceStatus('status').notNull().default('planned'),
     paidOn: date('paid_on'),
+    /** Kiedy termin zaksięgowano automatycznie; ustawiony znacznik chroni przed ponownym zaksięgowaniem po ręcznym cofnięciu płatności. */
+    autoBookedAt: timestamp('auto_booked_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

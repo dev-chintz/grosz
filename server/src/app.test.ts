@@ -2,7 +2,8 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import type { CategoriesResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse, TransactionsResponse } from '@grosz/shared/api';
+import type { CategoriesResponse, DashboardResponse, OptionsResponse, RecurringListResponse, ReportsResponse, SettingsResponse, TransactionsResponse } from '@grosz/shared/api';
+import { addDays, today as todayIso } from '@grosz/shared/dates';
 import { buildApp } from './app.ts';
 import { connectPglite, MIGRATIONS_FOLDER, type Connection } from './db/client.ts';
 import { accounts, households, transactions, users } from './db/schema.ts';
@@ -355,5 +356,69 @@ describe('domownicy', () => {
     const last = await app.inject({ method: 'DELETE', url: `/api/members/${ania!.id}` });
     expect(last.statusCode).toBe(400);
     expect(json<{ error: string }>(last).error).toContain('co najmniej jedna');
+  });
+});
+
+describe('automatyczne księgowanie i przypomnienia', () => {
+  const day = todayIso();
+  const monthOf = (date: string) => date.slice(0, 7);
+
+  const createRule = (name: string, extra: object = {}, startDate: string = day) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/recurring',
+      payload: {
+        name, direction: 'expense', categoryId: null, accountId: null, userId: null, payee: null, amount: 5_000, variableAmount: false,
+        unit: 'month', interval: 1, startDate, dayOfMonth: Number(startDate.slice(8, 10)), lastDayOfMonth: false, weekendRule: 'none', endType: 'never',
+        endDate: null, endCount: null, remindDaysBefore: null, autoBook: false, note: null, ...extra,
+      },
+    });
+  const ledgerItem = async (name: string) => {
+    const ledger = json<TransactionsResponse>(await app.inject({ url: `/api/transactions?month=${monthOf(day)}` }));
+    return ledger.items.find((i) => i.name === name)!;
+  };
+
+  it('księguje termin z włączonym księgowaniem (też wpływ), a zmienną kwotę i wyłączone księgowanie zostawia', async () => {
+    expect((await createRule('Auto stała', { autoBook: true })).statusCode).toBe(201);
+    expect((await createRule('Auto wpływ', { autoBook: true, direction: 'income' })).statusCode).toBe(201);
+    expect((await createRule('Auto zmienna', { autoBook: true, variableAmount: true })).statusCode).toBe(201);
+    expect((await createRule('Bez księgowania')).statusCode).toBe(201);
+
+    expect(await ledgerItem('Auto stała')).toMatchObject({ status: 'done', amount: 5_000 });
+    expect(await ledgerItem('Auto wpływ')).toMatchObject({ status: 'done', direction: 'income', amount: 5_000 });
+    expect(await ledgerItem('Auto zmienna')).toMatchObject({ status: 'planned' });
+    expect(await ledgerItem('Bez księgowania')).toMatchObject({ status: 'planned' });
+  });
+
+  it('ręcznie cofnięta płatność nie wraca po ponownym otwarciu widoku, a kolejne odczyty niczego nie zmieniają', async () => {
+    const booked = await ledgerItem('Auto stała');
+    expect(booked.status).toBe('done');
+    expect((await app.inject({ method: 'POST', url: `/api/occurrences/${booked.id}/unpay` })).statusCode).toBe(200);
+
+    expect(await ledgerItem('Auto stała')).toMatchObject({ status: 'planned' });
+    expect(await ledgerItem('Auto stała')).toMatchObject({ status: 'planned' });
+    // widok reguł i Pulpit też nie księgują ponownie
+    await app.inject({ url: '/api/recurring' });
+    await app.inject({ url: `/api/dashboard?month=${monthOf(day)}` });
+    expect(await ledgerItem('Auto stała')).toMatchObject({ status: 'planned' });
+  });
+
+  it('przypomnienie: flaga tylko dla nieopłaconej płatności w oknie przypomnienia', async () => {
+    const due = addDays(day, 2);
+    expect((await createRule('Z przypomnieniem', { remindDaysBefore: 3 }, due)).statusCode).toBe(201);
+    expect((await createRule('Przypomnienie za wąskie', { remindDaysBefore: 1 }, due)).statusCode).toBe(201);
+    expect((await createRule('Bez przypomnienia', { remindDaysBefore: null }, due)).statusCode).toBe(201);
+
+    const dashboard = json<DashboardResponse>(await app.inject({ url: `/api/dashboard?month=${monthOf(due)}` }));
+    const upcoming = (name: string) => dashboard.upcoming.find((u) => u.name === name);
+    expect(upcoming('Z przypomnieniem')).toMatchObject({ reminder: true, paid: false });
+    expect(upcoming('Przypomnienie za wąskie')?.reminder).toBe(false);
+    expect(upcoming('Bez przypomnienia')?.reminder).toBe(false);
+
+    // po opłaceniu przypomnienie znika
+    const paid = await app.inject({ method: 'POST', url: `/api/occurrences/${upcoming('Z przypomnieniem')!.occurrenceId}/pay`, payload: {} });
+    expect(paid.statusCode).toBe(200);
+    const after = json<DashboardResponse>(await app.inject({ url: `/api/dashboard?month=${monthOf(due)}` }));
+    expect(after.upcoming.find((u) => u.name === 'Z przypomnieniem')).toMatchObject({ reminder: false, paid: true });
   });
 });

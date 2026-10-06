@@ -6,6 +6,7 @@ Stan z 2026-10-06. Historia czatu i lokalna pamięć Claude'a **nie przenoszą s
 
 - Siedem ekranów: Pulpit, Transakcje, Cykliczne, Kalendarz, Kategorie, Raporty, Ustawienia.
 - Domownicy (pole „Kto” w operacjach i płatnościach, filtr w Transakcjach), konta z archiwizacją, eksport danych (kopia JSON i CSV do Excela).
+- Księgowanie automatyczne płatności cyklicznych i przypomnienia (wyróżnienie na Pulpicie, bez powiadomień push). Migracje: 0000–0004.
 - 85 testów, `npm run typecheck` i `npm run build` przechodzą.
 - Przygotowane wdrożenie na NAS: `deploy/deploy.sh`, `compose.yaml`, `Dockerfile`, bootstrap pustego budżetu (`npm run db:bootstrap`).
 

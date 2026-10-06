@@ -6,7 +6,7 @@ import { amountAt } from '@grosz/shared/recurrence';
 import { monthlyEquivalent, summarizeSchedule, toRecurrenceRule, validateRuleInput, type RuleInput, type RuleInputErrors } from '@grosz/shared/recurring';
 import type { Db } from '../db/client.ts';
 import { accounts, categories, occurrences, recurringRules, ruleAmountVersions, users } from '../db/schema.ts';
-import { ensureOccurrences } from './rules.ts';
+import { ensureOccurrences, settleAutoBooked } from './rules.ts';
 import { memberExists } from './settings.ts';
 
 type RuleRow = typeof recurringRules.$inferSelect;
@@ -96,6 +96,7 @@ async function validateMember(db: Db, householdId: string, input: RuleInput) {
 }
 
 export async function listRules(db: Db, householdId: string, today: IsoDate): Promise<RecurringListResponse> {
+  await settleAutoBooked(db, householdId, today);
   const rows = await db
     .select({ rule: recurringRules, categoryName: categories.name })
     .from(recurringRules)

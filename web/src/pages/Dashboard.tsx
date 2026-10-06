@@ -342,7 +342,15 @@ function Upcoming({ data, onChanged }: { data: DashboardResponse; onChanged: () 
                 <span>{MONTHS_SHORT[month - 1]}</span>
               </span>
               <span className={styles.paymentText}>
-                <strong className={u.paid ? styles.paidName : undefined}>{u.name}</strong>
+                <strong className={[u.paid && styles.paidName, u.reminder && styles.withReminder].filter(Boolean).join(' ') || undefined}>
+                  {u.name}
+                  {u.reminder && (
+                    <span className={styles.reminder}>
+                      <Icon name="bell" size={14} strokeWidth={2} />
+                      przypomnienie
+                    </span>
+                  )}
+                </strong>
                 <span>{u.meta}</span>
               </span>
               <span className={styles.amount}>

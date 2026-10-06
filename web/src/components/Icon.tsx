@@ -64,6 +64,7 @@ const PATHS = {
   play: <path d="M7 5l12 7-12 7z" />,
   trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
   download: <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />,
+  bell: <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2-3v-3a7 7 0 0 1 4-6M9 17v1a3 3 0 0 0 6 0v-1" />,
   coin: (
     <>
       <circle cx="12" cy="12" r="7.5" />

@@ -1,0 +1,1 @@
+ALTER TABLE "occurrences" ADD COLUMN "auto_booked_at" timestamp with time zone;

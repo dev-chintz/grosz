@@ -694,3 +694,25 @@
   border-radius: 999px;
   background: var(--expense);
 }
+
+/* Nazwa płatności z plakietką przypomnienia: plakietka zawija się pod nazwę, zamiast nachodzić na kwotę. */
+.paymentText .withReminder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+/* Plakietka przypomnienia. Wyższa specyficzność niż `.paymentText span`. */
+.paymentText .reminder {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--expense-tint);
+  color: var(--expense-text);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}

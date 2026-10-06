@@ -33,6 +33,8 @@ export interface UpcomingPayment {
   meta: string;
   variableAmount: boolean;
   paid: boolean;
+  /** Termin mieści się w oknie przypomnienia reguły (zostało tyle dni lub mniej) i płatność jest nieopłacona. */
+  reminder: boolean;
 }
 
 export interface CategoryTotal {
