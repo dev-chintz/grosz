@@ -102,7 +102,7 @@ W aplikacji będzie pusty budżet: konto „Konto główne” z saldem 0, osoba 
 
 ### Gdyby coś nie działało
 
-- **Aplikacja nie łączy się z bazą:** `host.docker.internal` może nie działać na Twojej wersji Container Station. Obejście (adres IP NAS albo wspólna sieć dockerowa z kontenerem Postgresa) jest w `deploy-qnap.md`, sekcja 8.
+- **Aplikacja nie łączy się z bazą:** grosz łączy się z Postgresem przez sieć Dockera `anvero-db_default` (QNAP blokuje kontenerom połączenia do samego NAS-a, więc `host.docker.internal` i `192.168.1.9:5432` nie działają). Jeśli sieć zmieniła nazwę, popraw `PG_NETWORK` w `.env` — szczegóły i test połączenia w `deploy-qnap.md`, sekcja 4.
 - **Każdy ekran pokazuje 409:** baza jest pusta i nie uruchomił się bootstrap — `cd /share/Container/grosz && docker compose run --rm migrate node server/src/bootstrap.ts`.
 - **Błąd w trakcie `deploy.sh`:** skrypt staje (`set -e`), a dotychczasowa wersja działa dalej. Logi: `docker compose logs app`. Wklej wynik w nowej rozmowie z Claude'em.
 

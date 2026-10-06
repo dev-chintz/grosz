@@ -1,11 +1,15 @@
 # Na NAS: deploy/deploy.sh (kopia bazy → migracje → nowa wersja aplikacji).
+#
+# Baza działa w kontenerze stosu Anvero. QNAP blokuje kontenerom połączenia do samego NAS-a
+# (ani host.docker.internal, ani adres w sieci lokalnej nie odpowiadają na 5432), więc grosz
+# dołącza do sieci Dockera, w której działa Postgres, i łączy się z nim po nazwie kontenera.
 
 services:
   migrate:
     build: .
     command: ["node", "server/src/migrate.ts"]
     env_file: .env
-    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks: [db]
     restart: "no"
     profiles: ["tools"]
 
@@ -13,10 +17,16 @@ services:
     build: .
     env_file: .env
     ports: ["8090:3000"]
-    extra_hosts: ["host.docker.internal:host-gateway"]
+    # default: port 8090 wystawiony na NAS; db: dostęp do Postgresa.
+    networks: [default, db]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+networks:
+  db:
+    external: true
+    name: ${PG_NETWORK:-anvero-db_default}

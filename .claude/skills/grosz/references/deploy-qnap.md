@@ -70,17 +70,22 @@ Jeden obraz, dwa tryby uruchomienia (migracja / aplikacja). Fastify serwuje API 
 
 Pliki w repo — to one są źródłem prawdy, nie kopiuj ich treści tutaj:
 - `Dockerfile`: etap `build` buduje tylko frontend (Vite); obraz końcowy to `node:24-alpine` z zależnościami produkcyjnymi serwera i źródłami `shared/src` + `server/src` (Node 24 uruchamia TS bez kompilacji), `server/drizzle` i `web/dist`. Działa jako użytkownik `node`.
-- `compose.yaml`: usługa `migrate` (profil `tools`, nie startuje przy zwykłym `up`) i `app` na porcie **8090**, obie z `extra_hosts: host.docker.internal:host-gateway` i healthcheckiem `/api/health`.
+- `compose.yaml`: usługa `migrate` (profil `tools`, nie startuje przy zwykłym `up`) i `app` na porcie **8090** z healthcheckiem `/api/health`; obie w zewnętrznej sieci `db` = `${PG_NETWORK}` (sieć kontenera Postgresa), `app` dodatkowo w `default` dla portu.
 - `.dockerignore`: bez `node_modules`, `.data`, `.git`, `.claude`, testów.
 - `.gitattributes`: końce linii LF — skrypty `.sh` z CRLF nie uruchomią się na NAS.
 
 `.env` na NAS (nigdy w gicie; wzór w `.env.example`):
 ```
-DATABASE_URL=postgres://grosz:<hasło>@host.docker.internal:5432/grosz
-PG_IMAGE=postgres:<wersja serwera>-alpine
+DATABASE_URL=postgres://grosz:<hasło>@anvero-db-db-1:5432/grosz
+PG_NETWORK=anvero-db_default
+PG_IMAGE=postgres:17-alpine
 ```
 
-Dlaczego `host.docker.internal`: Postgres działa w innym kontenerze i ma port 5432 wystawiony na NAS. `localhost` wewnątrz kontenera `app` wskazuje na sam kontener, nie na NAS; wpis `extra_hosts: host-gateway` w compose daje nazwę, która zawsze prowadzi do NAS. Gdyby to nie działało na danej wersji Container Station, alternatywą jest dołączenie `app` do sieci dockerowej Postgresa (`networks: external`) i użycie nazwy anvero-db-db-1 jako hosta.
+**Dlaczego wspólna sieć, a nie port NAS-a** (sprawdzone 2026-10-07 przy pierwszym wdrożeniu): QNAP blokuje kontenerom połączenia do samego NAS-a. `host.docker.internal` (→ 10.0.3.1) i adres w sieci lokalnej `192.168.1.9:5432` dawały timeout, mimo że port 5432 jest wystawiony. Działa dołączenie do sieci Dockera kontenera Postgresa (`anvero-db_default`) i łączenie się po nazwie kontenera — to samo robi `backup.sh` (`docker run --network $PG_NETWORK`). Test połączenia:
+```sh
+docker run --rm --network anvero-db_default postgres:17-alpine pg_isready -h anvero-db-db-1 -p 5432 -t 5
+```
+Jeśli stos Anvero zostanie przebudowany pod inną nazwą, sieć może się zmienić — sprawdź `docker inspect anvero-db-db-1 --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}'` i popraw `PG_NETWORK` w `.env`.
 
 Baza i użytkownik dla aplikacji (jednorazowo, hasło wygeneruj losowo i wpisz tylko do `.env` na NAS):
 ```sh
@@ -131,6 +136,7 @@ Przywrócenie: zatrzymaj `app`, `gunzip -c <plik> | psql "$DATABASE_URL"` na pus
 ## 8. Typowe problemy
 
 - **`docker: command not found` po SSH na QNAP** — Container Station musi być uruchomiony; sprawdź `docker compose version`. Na starszych wersjach binarka leży w katalogu pakietu Container Station.
-- **Aplikacja nie łączy się z bazą** — jeśli Postgres jest w kontenerze, `localhost` z wnętrza kontenera `app` to nie NAS. Użyj adresu IP NAS albo wspólnej sieci dockerowej i nazwy kontenera.
+- **Aplikacja albo kopia nie łączy się z bazą (timeout)** — sprawdź, czy `PG_NETWORK` w `.env` to nadal sieć kontenera Postgresa (sekcja 4). Na tym QNAP-ie nie działają ani `host.docker.internal`, ani adres NAS-a — firewall blokuje kontenerom połączenia do hosta.
+- **`Could not resolve host: github.com` przy pobieraniu kodu** — chwilowy problem DNS-u Container Station; `deploy.sh` pobiera kod przez sieć NAS-a (`--network host`) i ponawia 3 razy. Jeśli dalej nie działa, sprawdź `ping github.com` na samym NAS-ie.
 - **Daty przesunięte o dzień** — „dziś” zawsze bierz z `today()` z `@grosz/shared/dates` (liczy w `Europe/Warsaw` przez Intl, niezależnie od strefy kontenera, który działa w UTC), a daty płatności trzymaj jako `date`, nie `timestamp`. Winowajcą jest zwykle `new Date().toISOString().slice(0, 10)` — to data w UTC.
 - **`git pull` odmawia (`--ff-only`)** — ktoś zmienił pliki bezpośrednio na NAS. Nie nadpisuj na ślepo: pokaż użytkownikowi `git status` z NAS i ustal, co z tym zrobić.
